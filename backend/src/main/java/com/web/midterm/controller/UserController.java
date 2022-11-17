@@ -75,7 +75,7 @@ public class UserController {
 		verifytokenService.saveVerifytoken(new Verifytoken(
 				token, new Date(), dt, userService.findByEmail(user.getEmail())));
 		
-		verifytokenService.sendMail(user.getEmail(), token);
+		//verifytokenService.sendMail(user.getEmail(), token);
 		
 		URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user").toUriString());
 		jsonResponse.put("message", "Register Success");
