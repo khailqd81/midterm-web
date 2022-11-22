@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.web.midterm.entity.Group;
+import com.web.midterm.entity.SocialUserDto;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserDto;
 import com.web.midterm.repo.UserRepository;
@@ -31,13 +32,27 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	@Transactional
 	public void save(UserDto user) {
 		User newUser = new User();
-		//newUser.setUserId(0);
 		newUser.setEmail(user.getEmail());
-		newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+		if (user.getPassword() != null ) {
+			newUser.setPassword(passwordEncoder.encode(user.getPassword()));			
+		}
 		newUser.setFirstName(user.getFirstName());
 		newUser.setLastName(user.getLastName());
 		newUser.setRole("ROLE_USER");
 		userRepository.save(newUser);
+	}
+	
+	@Override
+	@Transactional
+	public void save(SocialUserDto user) {
+		User newUser = new User();
+		newUser.setEmail(user.getEmail());
+		newUser.setPassword(null);
+		newUser.setEnabled(true);
+		newUser.setFirstName(user.getFirstName());
+		newUser.setLastName(user.getLastName());
+		newUser.setRole("ROLE_USER");
+		//userRepository.save(newUser);
 	}
 
 	@Override

@@ -33,8 +33,9 @@ public class SecurityConfig {
 		http.authorizeHttpRequests()
 			.antMatchers("/api/login").permitAll()
 			.antMatchers("/api/user/register").permitAll()
-			.antMatchers("/api/groups/**").authenticated();
-			//.antMatchers("/api/user/**").authenticated();
+			.antMatchers("/api/user/oauth2").permitAll()
+			.antMatchers("/api/groups/**").authenticated()
+			.antMatchers("/api/user/**").authenticated();
 		//http.authorizeHttpRequests().anyRequest().authenticated();
 		
 		http.addFilter(authenicationFilter);

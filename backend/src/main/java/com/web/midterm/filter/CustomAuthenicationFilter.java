@@ -1,6 +1,5 @@
 package com.web.midterm.filter;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -99,7 +98,9 @@ public class CustomAuthenicationFilter extends UsernamePasswordAuthenticationFil
 		response.setContentType("application/json");
 		//ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid username or password", System.currentTimeMillis());
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
-		new ObjectMapper().writeValue(response.getOutputStream(),"Invalid email or password");
+		Map<String, String> error = new HashMap<>();
+		error.put("message", "Invalid email or password");
+		new ObjectMapper().writeValue(response.getOutputStream(),error);
 	}
 	
 	
