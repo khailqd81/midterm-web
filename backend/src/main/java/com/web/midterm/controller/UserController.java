@@ -9,14 +9,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,14 +24,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.web.midterm.entity.SocialUserDto;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserDto;
 import com.web.midterm.entity.Verifytoken;
 import com.web.midterm.service.UserService;
 import com.web.midterm.service.VerifytokenService;
+import com.web.midterm.utils.JWTHandler;
 
 @RestController
 @RequestMapping("/api/user")
@@ -44,8 +40,8 @@ public class UserController {
 	@Autowired
 	private VerifytokenService verifytokenService;
 	@Autowired
-	private Environment env;
-	
+	private JWTHandler jwtHandler;
+
 	@PostMapping("/register")
 	public ResponseEntity<?> registerUser(@RequestBody @Valid UserDto user, BindingResult bindingResult)
 			throws Exception {
@@ -90,7 +86,7 @@ public class UserController {
 		jsonResponse.put("confirmToken", token);
 		return ResponseEntity.created(uri).body(jsonResponse);
 	}
-
+	
 	@PostMapping("/oauth2")
 	public ResponseEntity<?> loginWithOauth(@RequestBody @Valid SocialUserDto user, BindingResult bindingResult)
 			throws Exception {
@@ -111,27 +107,30 @@ public class UserController {
 
 		// Check exists email
 		User theUser = userService.findByEmail(user.getEmail());
+		boolean isAuthBeforeWithGoogle = false;
 		if (theUser != null) {
-			jsonResponse.put("message", "Email has existed");
-			return ResponseEntity.badRequest().body(jsonResponse);
-			// throw new Exception("Email has existed");
-		}
+			if (theUser.getProvider().equals("GOOGLE")) {
+				isAuthBeforeWithGoogle = true;
+			} else {
+				jsonResponse.put("message", "Email has registerd with local authenicaiton");
+				return ResponseEntity.badRequest().body(jsonResponse);
+			}
 
-		userService.save(user);
-		Algorithm algorithm = Algorithm.HMAC256(env.getProperty("jwt.secret").getBytes());
-		String access_token = JWT.create()
-				.withSubject(user.getEmail())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 3600000*2))
-				//.withIssuer(request.getRequestURI().toString())
-				.withClaim("roles", Arrays.asList("ROLE_USER"))
-				.sign(algorithm);
-		String refresh_token = JWT.create().withSubject(user.getEmail())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 10 * 86400000))
-				//.withIssuer(request.getRequestURI().toString())
-				.sign(algorithm);
+		}
+		
+		if (!isAuthBeforeWithGoogle) {
+			userService.save(user);			
+		}
+		
+		String email = user.getEmail();
+		List<String> roles = Arrays.asList("ROLE_USER");
+		String uri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/oauth2").toString();
+		String accessToken = jwtHandler.generateAccessToken(email, uri, roles);
+		String refreshToken = jwtHandler.generateAccessToken(email, uri, null);
+		
 		jsonResponse.put("message", "Authenication with Oauth2 Success");
-		jsonResponse.put("access_token", access_token);
-		jsonResponse.put("refresh_token", refresh_token);
+		jsonResponse.put("access_token", accessToken);
+		jsonResponse.put("refresh_token", refreshToken);
 		return ResponseEntity.ok().body(jsonResponse);
 	}
 

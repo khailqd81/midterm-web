@@ -1,6 +1,5 @@
 package com.web.midterm.filter;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -36,7 +35,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 		if (request.getServletPath().equals("/api/login") 
 				|| request.getServletPath().equals("/api/user/register")
-				|| request.getServletPath().equals("/api/user/oauth2")) {
+				|| request.getServletPath().equals("/api/user/oauth2")
+				|| request.getServletPath().equals("/api/user/confirm")) {
 			filterChain.doFilter(request, response);
 		} else {
 			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);

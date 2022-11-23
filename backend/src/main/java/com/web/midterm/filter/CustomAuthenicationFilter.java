@@ -99,7 +99,9 @@ public class CustomAuthenicationFilter extends UsernamePasswordAuthenticationFil
 		//ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid username or password", System.currentTimeMillis());
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		Map<String, String> error = new HashMap<>();
-		error.put("message", "Invalid email or password");
+		//error.put("message", "Invalid email or password");
+		error.put("message", failed.getMessage());
+		System.out.println(failed);
 		new ObjectMapper().writeValue(response.getOutputStream(),error);
 	}
 	

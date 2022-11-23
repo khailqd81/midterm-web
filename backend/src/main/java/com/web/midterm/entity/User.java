@@ -41,6 +41,8 @@ public class User {
 	@Column(name="role")
 	private String role;
 	
+	@Column(name="provider")
+	private String provider;
 	@OneToMany(mappedBy = "primaryKey.user",cascade = CascadeType.ALL)
 	@JsonIgnore
 	private List<UserGroup> userGroup = new ArrayList<>();
@@ -121,6 +123,14 @@ public class User {
 
 	public void setRole(String role) {
 		this.role = role;
+	}
+
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
 	}
 	
 }

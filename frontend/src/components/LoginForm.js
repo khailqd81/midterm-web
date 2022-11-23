@@ -4,7 +4,7 @@ import * as yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
 import axios from "axios";
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect } from "react";
 import jwt_decode from "jwt-decode";
 
 const schema = yup.object({
@@ -23,12 +23,12 @@ function LoginForm() {
     const handleCallBackResponse = async (response) => {
         var userObject = jwt_decode(response.credential);
         console.log(userObject);
-        const responseFromBackEnd = axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user/oauth2`, {
+        const responseFromBackEnd = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user/oauth2`, {
             email: userObject.email,
             firstName: userObject.family_name,
             lastName: userObject.given_name,
         })
-        console.log(responseFromBackEnd);
+        localStorage.setItem("access_token",responseFromBackEnd.data?.access_token);
         navigate("/home");
     }
     useEffect(() => {

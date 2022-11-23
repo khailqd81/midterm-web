@@ -1,8 +1,10 @@
 package com.web.midterm.service;
+
 import java.util.Date;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -11,12 +13,16 @@ import com.web.midterm.entity.Verifytoken;
 import com.web.midterm.repo.VerifytokenRepository;
 
 @Service
-public class VerifytokenServiceImpl implements VerifytokenService{
+public class VerifytokenServiceImpl implements VerifytokenService {
 	@Autowired
 	private VerifytokenRepository verifytokenRepository;
-	
+
 	@Autowired
 	private JavaMailSender mailSender;
+
+	@Autowired
+	private Environment env;
+	
 	@Override
 	public void saveVerifytoken(Verifytoken token) {
 		verifytokenRepository.save(token);
@@ -36,17 +42,19 @@ public class VerifytokenServiceImpl implements VerifytokenService{
 			theToken.setConfirmedAt(new Date());
 			theToken.getUser().setEnabled(true);
 			verifytokenRepository.save(theToken);
+		} else {
+			throw new Exception("Invalid token.");
 		}
 	}
 
 	@Override
 	public void sendMail(String toAddress, String token) {
-		String confirmationUrl = "http://localhost:8080/api/user/confirm?token="+token;
-        SimpleMailMessage email = new SimpleMailMessage();
-        email.setTo(toAddress);
-        email.setSubject("Registration Confirmation");
-        email.setText("Confirmation link" + "\r\n" + confirmationUrl);
-        mailSender.send(email);
+		String confirmationUrl = env.getProperty("frontend.url") +"/user/confirm?token=" + token;
+		SimpleMailMessage email = new SimpleMailMessage();
+		email.setTo(toAddress);
+		email.setSubject("Registration Confirmation");
+		email.setText("Confirmation link to app: " + "\r\n" + confirmationUrl + "\nThis will expire in 15 minutes");
+		mailSender.send(email);
 	}
 
 }
