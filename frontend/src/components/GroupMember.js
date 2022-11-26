@@ -1,7 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import { BsFillCalendarCheckFill } from "react-icons/bs"
+import { FaUserAlt } from "react-icons/fa"
+import { MdEmail } from "react-icons/md"
+import { BiLinkAlt } from "react-icons/bi"
 function GroupMember() {
     const navigate = useNavigate();
     const params = useParams();
@@ -87,7 +90,8 @@ function GroupMember() {
                         <span className="bg-[#61dafb] px-4 py-2 rounded-full uppercase mr-2">{groupInfo?.groupName[0]}</span>
                         <span className="italic">{groupInfo.groupName}</span>
                     </div>
-                    <div className="italic mb-4">
+                    <div className="italic mb-4 flex pt-4">
+                        <BsFillCalendarCheckFill className="self-center mr-2" size={25} />
                         <span className="font-bold">Created At:</span> {new Date(groupInfo.createdAt).toString().slice(0, 24)}
                     </div>
                 </div>
@@ -100,7 +104,10 @@ function GroupMember() {
 
                             </div>
                             <div className="flex flex-col rounded-lg shadow-xl fixed top-1/2 left-1/2 -translate-y-2/4 -translate-x-1/2 bg-white px-4 py-10 opacity-100 z-1">
-                                <p><span className="font-bold italic">Invite Link:</span> {`${process.env.REACT_APP_BASE_URL}/home/groups/join/${groupInfo.groupLink}`}</p>
+                                <div className="flex">
+                                    <BiLinkAlt size={30} className="self-center mr-4" />
+                                    <span className="font-bold italic">Invite Link:</span> {`${process.env.REACT_APP_BASE_URL}/home/groups/join/${groupInfo.groupLink}`}
+                                </div>
                                 <div className="flex justify-end">
                                     <button
                                         onClick={() => navigator.clipboard.writeText(`${process.env.REACT_APP_BASE_URL}/home/groups/join/${groupInfo.groupLink}`)}
@@ -119,9 +126,15 @@ function GroupMember() {
 
                 </div>
             </div>
-            <div className="italic mb-4">
-                <span className="font-bold">Owner By:</span> {groupOwner.lastName + " " + groupOwner.firstName}
-                <span className="font-bold ml-4">Email:</span> {groupOwner.email}
+            <div className="italic mb-4 flex">
+                <div className="flex mr-8">
+                    <FaUserAlt size={20} className="mr-2" />
+                    <span className="font-bold">Owner By:</span> {groupOwner.lastName + " " + groupOwner.firstName}
+                </div>
+                <div className="flex">
+                    <MdEmail size={25} className="mr-2" />
+                    <span className="font-bold">Email:</span> {groupOwner.email}
+                </div>
             </div>
             <div className="flex mb-4">
                 <input onChange={(e) => { setInviteMail(e.target.value) }} value={inviteMail} className="px-4 py-2 border rounded focus:border-cyan-300 outline-none shadow-2xl" placeholder="Member's email" />

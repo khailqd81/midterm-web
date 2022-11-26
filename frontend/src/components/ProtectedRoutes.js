@@ -21,7 +21,11 @@ function ProtectedRoutes() {
                 console.log("response: ", response)
                 if (response.status === 200) {
                     setIsAuth(true);
-                } 
+                    localStorage.setItem("userId", response.data?.userId);
+                    localStorage.setItem("email", response.data?.email);
+                    localStorage.setItem("firstName", response.data?.firstName);
+                    localStorage.setItem("lastName", response.data?.lastName);
+                }
                 setIsLoading(false);
             } catch (error) {
                 setIsLoading(false);
@@ -41,6 +45,10 @@ function ProtectedRoutes() {
     const handleLogout = () => {
         if (localStorage.getItem("access_token") != null) {
             localStorage.removeItem("access_token");
+            localStorage.removeItem("firstName");
+            localStorage.removeItem("lastName");
+            localStorage.removeItem("email");
+            localStorage.removeItem("userId");
         }
         navigate("/login")
     }
@@ -51,15 +59,20 @@ function ProtectedRoutes() {
             <header className="flex justify-between px-20 py-4 bg-[#333] ml-0">
                 <ul className="flex text-white m-0 p-0">
                     <li className="mr-4">
-                        <Link to="/home" className="no-underline text-[#61dafb]">KahooClone</Link>
+                        <Link to="/home" className="no-underline text-[#61dafb]">KahooPaTiKa</Link>
                     </li>
                     <li className="mr-4">
                         <Link to="/home" className="no-underline text-white hover:text-[#61dafb]">Home</Link>
                     </li>
                 </ul>
                 <ul className="flex text-white m-0 p-0">
-                    <li className="mr-4 cursor-pointer">User</li>
-                    <li className="mr-4 cursor-pointer text-white hover:text-[#61dafb]" onClick={handleLogout}>Logout</li>
+                    <li className="mr-4">
+                        <Link to="/home/profile" className="no-underline text-white hover:text-[#61dafb]">
+                            Hello {localStorage.getItem("firstName")}
+                        </Link>
+
+                    </li>
+                    <li className="cursor-pointer text-white hover:text-[#61dafb]" onClick={handleLogout}>Logout</li>
                 </ul>
             </header>
             <div className="py-8 px-20 min-h-[calc(100vh-112px)]">

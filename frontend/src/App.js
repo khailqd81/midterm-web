@@ -11,6 +11,7 @@ import Home from './components/Home';
 import PageNotFound from './components/PageNotFound';
 import GroupMember from './components/GroupMember';
 import GroupLink from './components/GroupLink';
+import UserProfile from './components/UserProfile';
 
 const queryClient = new QueryClient()
 
@@ -29,6 +30,7 @@ function App() {
               <Route path="/home/groups/join/:groupLink" element={<GroupLink />} />
               <Route element={<ProtectedRoutes />} >
                 <Route path="/home" element={<Home />} />
+                <Route path="/home/profile" element={<UserProfile />} />
                 <Route path="/home/groups/:groupId" element={<GroupMember />} />
               </Route>
               <Route path='*' element={<PageNotFound />} />

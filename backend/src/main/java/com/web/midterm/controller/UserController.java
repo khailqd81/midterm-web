@@ -14,6 +14,8 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +43,20 @@ public class UserController {
 	private VerifytokenService verifytokenService;
 	@Autowired
 	private JWTHandler jwtHandler;
+
+	@GetMapping
+	public ResponseEntity<?> getUser() {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userService.findByEmail(currentPrincipalName);
+		Map<String, Object> response = new HashMap<>();
+		response.put("userId", user.getUserId());
+		response.put("email", user.getEmail());
+		response.put("firstName", user.getFirstName());
+		response.put("lastName", user.getLastName());
+		return ResponseEntity.ok().body(response);
+	}
 
 	@PostMapping("/register")
 	public ResponseEntity<?> registerUser(@RequestBody @Valid UserDto user, BindingResult bindingResult)
@@ -86,7 +102,7 @@ public class UserController {
 		jsonResponse.put("confirmToken", token);
 		return ResponseEntity.created(uri).body(jsonResponse);
 	}
-	
+
 	@PostMapping("/oauth2")
 	public ResponseEntity<?> loginWithOauth(@RequestBody @Valid SocialUserDto user, BindingResult bindingResult)
 			throws Exception {
@@ -117,17 +133,17 @@ public class UserController {
 			}
 
 		}
-		
+
 		if (!isAuthBeforeWithGoogle) {
-			userService.save(user);			
+			userService.save(user);
 		}
-		
+
 		String email = user.getEmail();
 		List<String> roles = Arrays.asList("ROLE_USER");
 		String uri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/oauth2").toString();
 		String accessToken = jwtHandler.generateAccessToken(email, uri, roles);
 		String refreshToken = jwtHandler.generateAccessToken(email, uri, null);
-		
+
 		jsonResponse.put("message", "Authenication with Oauth2 Success");
 		jsonResponse.put("access_token", accessToken);
 		jsonResponse.put("refresh_token", refreshToken);
@@ -144,8 +160,16 @@ public class UserController {
 
 	@GetMapping("/isauth")
 	public ResponseEntity<?> isUserAuthenicated() {
-		Map<String, String> jsonResponse = new HashMap<>();
-		jsonResponse.put("Message: ", "User Authenicated");
-		return ResponseEntity.ok().body(jsonResponse);
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userService.findByEmail(currentPrincipalName);
+		Map<String, Object> response = new HashMap<>();
+		response.put("userId", user.getUserId());
+		response.put("email", user.getEmail());
+		response.put("firstName", user.getFirstName());
+		response.put("lastName", user.getLastName());
+		//Map<String, String> jsonResponse = new HashMap<>();
+		response.put("message: ", "User Authenicated");
+		return ResponseEntity.ok().body(response);
 	}
 }
