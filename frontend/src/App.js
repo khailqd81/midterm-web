@@ -26,10 +26,10 @@ function App() {
               <Route path="/login" element={<LoginForm />} />
               <Route path="/register" element={<RegisterForm />} />
               <Route path="/user/confirm" element={<UserConfirm />} />
+              <Route path="/home/groups/join/:groupLink" element={<GroupLink />} />
               <Route element={<ProtectedRoutes />} >
                 <Route path="/home" element={<Home />} />
                 <Route path="/home/groups/:groupId" element={<GroupMember />} />
-                <Route path="/home/groups/join/:groupLink" element={<GroupLink />} />
               </Route>
               <Route path='*' element={<PageNotFound />} />
             </Routes>

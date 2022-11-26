@@ -28,7 +28,7 @@ function Home() {
                 memberGroups = response.data?.coowner;
             }
             if (response.data?.member.length > 0) {
-                memberGroups.concat(response.data?.member);
+                memberGroups = memberGroups.concat(response.data?.member);
             }
             setMemberGroup(memberGroups)
         }
@@ -89,7 +89,7 @@ function Home() {
 
             <div className="mb-8">
                 <p className="font-bold mb-2 font-bold text-2xl">Create new group: </p>
-                <input className="outline-none px-4 py-2 border rounded mr-4 shadow-xl" placeholder="Group name" value={groupName} onChange={e => setGroupName(e.target.value)} />
+                <input className="outline-none px-4 py-2 border rounded mr-4 shadow-xl focus:border-cyan-300" placeholder="Group name" value={groupName} onChange={e => setGroupName(e.target.value)} />
                 <button className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2]" onClick={handleCreateGroup}>Create +</button>
             </div>
             <div>

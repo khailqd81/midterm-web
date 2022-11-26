@@ -117,17 +117,33 @@ public class GroupController {
 //		result.put("owner", ownerGroup);
 //		result.put("coowner", coOwnerGroup);
 //		result.put("member", memberGroup);
-		Map<String, List<?>> result = new HashMap<>();
+		Map<String, Object> result = new HashMap<>();
+		result.put("groupId", group.getGroupId());
+		result.put("groupLink", group.getGroupLink());
+		result.put("groupName", group.getGroupName());
+		result.put("createdAt", group.getCreatedAt());
+		result.put("ownerId", group.getUser().getUserId());
 		result.put("members", users);
 		return ResponseEntity.ok().body(result);
 	}
 
 	@PostMapping("/member")
-	public ResponseEntity<?> saveMember(@RequestBody Map<String, String> payload) {
+	public ResponseEntity<?> saveMember(@RequestBody Map<String, String> payload) throws Exception {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User owner = userService.findByEmail(currentPrincipalName);
+		// Get params from request
 		int userId = Integer.parseInt(payload.get("userId"));
 		int groupId = Integer.parseInt(payload.get("groupId"));
 		String role = payload.get("role");
-
+		Group group = groupService.findById(groupId);
+		if (owner.getUserId() != group.getUser().getUserId()) {
+			throw new Exception("You don't have permission to change role");
+		}
+		if (role.equals("Kick")) {
+			// Handle kick out member
+		}
 		if (!groupService.saveMember(userId, groupId, role)) {
 			Map<String, String> jsonResponse = new HashMap<>();
 			jsonResponse.put("message", "Group Id or User Id or Role not found.");
@@ -139,30 +155,59 @@ public class GroupController {
 		return ResponseEntity.ok().body(result);
 	}
 
-	@PostMapping("/join/{groupLink}")
+	@GetMapping("/join/{groupLink}")
 	public ResponseEntity<?> joinGroup(@PathVariable String groupLink) throws Exception {
+		Map<String, String> result = new HashMap<>();
 		// Get user from access token
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String currentPrincipalName = authentication.getName();
 		User user = userService.findByEmail(currentPrincipalName);
 		Group group = groupService.findByGroupLink(groupLink);
 		GroupRole role = groupRoleRepository.findByRoleName("member");
-		if (user != null && group != null && role != null) {
-			UserGroup userGroup = new UserGroup();
-			userGroup.setUser(user);
-			userGroup.setGroup(group);
-			userGroup.setGroupRole(role);
-			groupService.saveUserGroup(userGroup);
+		UserGroup userGroup = groupService.findByUserIdAndGroupId(user.getUserId(), group.getGroupId());
+		if (userGroup != null) {
+			result.put("message", "You have joined group");
+			return ResponseEntity.ok().body(result);
 		}
-		Map<String, String> result = new HashMap<>();
+		if (user != null && group != null && role != null) {
+			UserGroup newUserGroup = new UserGroup();
+			newUserGroup.setUser(user);
+			newUserGroup.setGroup(group);
+			newUserGroup.setGroupRole(role);
+			groupService.saveUserGroup(newUserGroup);
+		}
+		
 		result.put("message", "Join group OK");
 		return ResponseEntity.ok().body(result);
 	}
-
+	
+	@PostMapping("/invite")
+	public ResponseEntity<?> sendInviteEmail(@RequestBody Map<String,String> data) throws Exception {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userService.findByEmail(currentPrincipalName);
+		// Get groupId and member email from request
+		int groupId = Integer.parseInt(data.get("groupId"));
+		String memberEmail = data.get("memberEmail");
+		GroupRole role = groupRoleRepository.findByRoleName("member");
+		System.out.println(groupId);
+		System.out.println(memberEmail);
+		if (user != null && role != null) {
+//			UserGroup userGroup = new UserGroup();
+//			userGroup.setUser(newMember);
+//			userGroup.setGroup(group);
+//			userGroup.setGroupRole(role);
+//			groupService.saveUserGroup(userGroup);
+			groupService.sendInviteLink(memberEmail, groupId);
+		}
+		Map<String, String> result = new HashMap<>();
+		result.put("message", "Invite member by email OK");
+		return ResponseEntity.ok().body(result);
+	}
 	@Data
 	public class UserGroupResponse {
 		private User user;
 		private String role;
-
 	}
 }

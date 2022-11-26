@@ -59,9 +59,16 @@ function LoginForm() {
         mutation.mutate(data);
     };
     if (mutation.isSuccess) {
-        console.log(mutation.data.data.access_token);
         localStorage.setItem("access_token", mutation.data.data.access_token);
-        navigate("/home");
+        console.log(mutation.data.data.access_token);
+        // if from joinGroupByLink page navigate to that page
+        const fromJoinGroupPage = localStorage.getItem("fromJoinGroup");
+        if (fromJoinGroupPage && fromJoinGroupPage.length > 10) {
+            console.log("login to fromJoinGroup", fromJoinGroupPage)
+            navigate(fromJoinGroupPage);
+        } else {
+            navigate("/home");
+        }
     }
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-fit mx-auto py-6 px-10 shadow-lg border rounded bg-white absolute top-[50%] left-[50%] -translate-y-1/2 -translate-x-1/2">

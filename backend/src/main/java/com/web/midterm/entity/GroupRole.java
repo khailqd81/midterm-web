@@ -13,7 +13,7 @@ public class GroupRole {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="role_id")
-	private int role_id;
+	private int roleId;
 	
 	@Column(name="role_name")
 	private String roleName;
@@ -22,12 +22,12 @@ public class GroupRole {
 		
 	}
 	
-	public int getRole_id() {
-		return role_id;
+	public int getRoleId() {
+		return roleId;
 	}
 
-	public void setRole_id(int role_id) {
-		this.role_id = role_id;
+	public void setRoleId(int roleId) {
+		this.roleId = roleId;
 	}
 
 	public String getRoleName() {

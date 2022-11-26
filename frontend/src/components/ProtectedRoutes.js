@@ -14,17 +14,24 @@ function ProtectedRoutes() {
                 setIsLoading(false);
                 return;
             }
-            const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user/isauth`, {
-                headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
-            })
-            console.log("response: ", response)
-            if (response.status === 200) {
-                setIsAuth(true);
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user/isauth`, {
+                    headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
+                })
+                console.log("response: ", response)
+                if (response.status === 200) {
+                    setIsAuth(true);
+                } 
+                setIsLoading(false);
+            } catch (error) {
+                setIsLoading(false);
+
             }
-            setIsLoading(false);
+
         }
         checkAuth();
     }, [])
+    console.log("isLoading: ", isLoading)
 
     if (isLoading) {
         return (<div className="mx-auto h-[100vh] relative">
@@ -41,7 +48,7 @@ function ProtectedRoutes() {
     return (isAuth
         ?
         <>
-            <header className="flex justify-between px-20 py-4 bg-[#333] w-screen ml-0">
+            <header className="flex justify-between px-20 py-4 bg-[#333] ml-0">
                 <ul className="flex text-white m-0 p-0">
                     <li className="mr-4">
                         <Link to="/home" className="no-underline text-[#61dafb]">KahooClone</Link>

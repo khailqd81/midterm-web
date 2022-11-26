@@ -14,4 +14,6 @@ public interface GroupService {
 	public Group findById(int id);
 	public Group findByGroupLink(String groupLink);
 	public void createGroup(GroupDto g);
+	public void sendInviteLink(String toAddress, int groupId)  throws Exception;
+	public UserGroup findByUserIdAndGroupId(int userId, int groupId);
 }

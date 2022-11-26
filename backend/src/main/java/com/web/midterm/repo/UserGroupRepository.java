@@ -8,4 +8,6 @@ import com.web.midterm.entity.UserGroupId;
 public interface UserGroupRepository extends JpaRepository<UserGroup, UserGroupId> {
 	public List<UserGroup> findByPrimaryKeyUserUserId(int id);
 	public List<UserGroup> findByPrimaryKeyGroupGroupId(int id);
+	public UserGroup findByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(int userId,int groupId);
+	public UserGroup findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(int roleId,int groupId);
 }

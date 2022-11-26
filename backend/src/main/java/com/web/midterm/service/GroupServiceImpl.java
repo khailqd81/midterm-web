@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import com.web.midterm.entity.Group;
@@ -28,6 +30,8 @@ public class GroupServiceImpl implements GroupService {
 	private GroupRoleRepository groupRoleRepository;
 	@Autowired
 	private UserGroupRepository userGroupRepository;
+	@Autowired
+	private JavaMailSender mailSender;
 
 	@Autowired
 	private Environment env;
@@ -49,20 +53,29 @@ public class GroupServiceImpl implements GroupService {
 		User user = userRepository.findByUserId(userId);
 		Group group = groupRepository.findByGroupId(groupId);
 		GroupRole role = groupRoleRepository.findByRoleName(roleName);
-		if (user == null || group == null || role ==null) {
+		if (user == null || group == null || role == null) {
 			return false;
 		}
 		if (user.getUserId() == group.getUser().getUserId()) {
 			return false;
 		}
-		UserGroup userGroup = new UserGroup();
-		userGroup.setGroup(group);
-		userGroup.setUser(user);
-		userGroup.setGroupRole(role);
-		userGroupRepository.save(userGroup);
+		// Change owner of the group => change current owner to co-owner
+		if (roleName.equals("owner")) {
+			group.setUser(user);
+			groupRepository.save(group);
+			UserGroup userGroup = userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(), groupId);
+			GroupRole memberRole = groupRoleRepository.findByRoleName("co-owner");
+			userGroup.setGroupRole(memberRole);
+			userGroupRepository.save(userGroup);
+		}
+		UserGroup updateUserGroup = new UserGroup();
+		updateUserGroup.setGroup(group);
+		updateUserGroup.setUser(user);
+		updateUserGroup.setGroupRole(role);
+		userGroupRepository.save(updateUserGroup);
 		return true;
 	}
-	
+
 	@Override
 	public Group findById(int id) {
 		return groupRepository.findByGroupId(id);
@@ -76,7 +89,7 @@ public class GroupServiceImpl implements GroupService {
 		Group newGroup = new Group();
 		newGroup.setGroupName(g.getGroupName());
 		newGroup.setUser(owner);
-		newGroup.setGroupLink(env.getProperty("frontend.url") + "/" + link);
+		newGroup.setGroupLink(link);
 		newGroup.setCreatedAt(new Date());
 
 		GroupRole role = groupRoleRepository.findByRoleName("owner");
@@ -98,5 +111,27 @@ public class GroupServiceImpl implements GroupService {
 	public void saveUserGroup(UserGroup userGroup) {
 		userGroupRepository.save(userGroup);
 	}
+
+	@Override
+	public void sendInviteLink(String toAddress, int groupId) throws Exception {
+		Group group = groupRepository.findByGroupId(groupId);
+		if (group == null) {
+			throw new Exception("Group ID not found");
+		}
+		String inviteLink = env.getProperty("frontend.url") + "/home/groups/join/" + group.getGroupLink();
+		SimpleMailMessage email = new SimpleMailMessage();
+		email.setTo(toAddress);
+		email.setSubject("Group Invitation Link");
+		email.setText("You are invited to join group: " + "\r\n" + inviteLink);
+		mailSender.send(email);
+
+	}
+
+	@Override
+	public UserGroup findByUserIdAndGroupId(int userId, int groupId) {
+		return userGroupRepository.findByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
+	}
+	
+	
 
 }
