@@ -1,6 +1,7 @@
 package com.web.midterm.entity;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -34,6 +35,18 @@ public class User {
 	
 	@Column(name="lastname")
 	private String lastName;
+	
+	@Column(name="phone")
+	private String phone;
+	
+	@Column(name="address")
+	private String address;
+	
+	@Column(name="gender")
+	private String gender;
+	
+	@Column(name="birthday")
+	private Date birthday;
 	
 	@Column(name="enabled")
 	private boolean enabled = false;
@@ -131,6 +144,38 @@ public class User {
 
 	public void setProvider(String provider) {
 		this.provider = provider;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public Date getBirthday() {
+		return birthday;
+	}
+
+	public void setBirthday(Date birthday) {
+		this.birthday = birthday;
 	}
 	
 }

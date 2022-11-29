@@ -46,6 +46,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		newUser.setProvider("LOCAL");
 		newUser.setFirstName(user.getFirstName());
 		newUser.setLastName(user.getLastName());
+		newUser.setGender(user.getGender());
 		newUser.setRole("ROLE_USER");
 		userRepository.save(newUser);
 	}

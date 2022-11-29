@@ -23,3 +23,5 @@
 /frontend/yarn-error.log*
 
 /.metadata
+
+/backend/src/main/resources/*.properties

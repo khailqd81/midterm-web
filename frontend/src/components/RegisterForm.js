@@ -7,6 +7,8 @@ import axios from "axios";
 
 // Yup schema
 const schema = yup.object().shape({
+    firstName:  yup.string().required("is required"),
+    lastName:  yup.string().required("is required"),
     password: yup.string().required("is required"),
     confirmPassword: yup.string()
         .oneOf([yup.ref('password'), null], 'Passwords must match'),
@@ -21,6 +23,7 @@ function RegisterForm() {
 
     // Handle register new user
     const mutation = useMutation((data) => {
+        console.log(data)
         return axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user/register`, { ...data, roles: [data.roles] });
     })
     const onSubmit = (data) => {
@@ -55,12 +58,22 @@ function RegisterForm() {
             <div className="flex flex-col">
                 <label htmlFor="firstName">Firstname</label>
                 <input name="firstName" type="text" className="min-w-[30vw] px-4 py-2 rounded mb-1 mt-2 border border-gray-400 outline-cyan-300" {...register("firstName")} placeholder="Firstname" />
+                <p className="mb-4 text-red-500 text-sm"></p>
             </div>
             <div className="flex flex-col">
                 <label htmlFor="lastName">Lastname</label>
                 <input name="lastName" type="text" className="min-w-[30vw] px-4 py-2 rounded mb-1 mt-2 border border-gray-400 outline-cyan-300" {...register("lastName")} placeholder="Lastname" />
+                <p className="mb-4 text-red-500 text-sm"></p>
             </div>
-
+            <div className="flex flex-col">
+                <label htmlFor="lastName">Gender</label>
+                <div className="flex">
+                <input type="radio" id="male" name="gender" value="m"  {...register("gender")} checked/>
+                <label for="male" className="ml-2 mr-8">Male</label>
+                <input type="radio" id="female" name="gender" value="f"  {...register("gender")} />
+                <label for="female" className="ml-2">Female</label>
+                </div>
+            </div>
             <button type="submit" className={mutation.isLoading ? "py-1 rounded w-full text-center bg-green-300 block mt-4" : "py-1 rounded w-full text-center bg-green-400 block hover:bg-green-300 mt-4"}>Sign up</button>
             <Link className="text-center mb-2 mt-4 block w-full underline" to="/login">Login</Link>
         </form>

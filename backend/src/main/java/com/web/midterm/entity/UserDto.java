@@ -21,7 +21,10 @@ public class UserDto {
 	private String firstName;
 
 	private String lastName;
-
+	
+	@NotNull(message = "Gender is required")
+	private String gender;
+	
 	public String getPassword() {
 		return password;
 	}
@@ -60,6 +63,14 @@ public class UserDto {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+	
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
 	}
 
 	@Override

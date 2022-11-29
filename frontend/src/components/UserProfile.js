@@ -7,12 +7,28 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from "yup";
 import { useMutation } from "react-query";
 import { AiFillCheckCircle } from "react-icons/ai"
-import {refreshAccessToken} from "./utils/auth"
+import { refreshAccessToken } from "./utils/auth"
 
+const phoneRegExp = /^(\s*|[0-9]{10})$/
 const schema = yup.object().shape({
     firstName: yup.string().required("is required"),
     lastName: yup.string().required("is required"),
-    //email: yup.string().email("Invalid email format").required("is required"),
+    gender: yup.string().required("is required"),
+    phone: yup.string().notRequired()
+        .matches(phoneRegExp, 'Phone number is not valid')
+        .min(10, "too short")
+        .max(10, "too long").nullable().transform((value) => !!value ? value : null),
+    // birthday: yup.date("Date format dd/MM/yyyy").notRequired()
+    //     .transform((value, originalValue) => {
+    //         const parsedDate = isDate(originalValue)
+    //             ? originalValue
+    //             : parse(originalValue, "dd/MM/yyyy", new Date());
+    //         return parsedDate;
+    //     })
+    //     .max(new Date(), "Future date not allowed"),
+    // .nullable()
+    // .transform((value) => !!value ? value : null),
+
 }).required();
 
 function UserProfile() {
@@ -24,7 +40,11 @@ function UserProfile() {
         userId: "",
         firstName: "",
         lastName: "",
-        email: ""
+        email: "",
+        phone: "",
+        birthday: "",
+        address: "",
+        gender: ""
     })
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -38,18 +58,36 @@ function UserProfile() {
                 const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user`, {
                     headers: { 'Authorization': "Bearer " + accessToken }
                 })
-    
+
                 setUser(response.data);
                 reset({
                     firstName: response.data.firstName,
                     lastName: response.data.lastName,
                     email: response.data.email,
+                    gender: response.data?.gender,
+                    phone: response.data?.phone,
+                    address: response.data?.address,
+                    birthday: response.data?.birthday,
                 })
             } catch (error) {
                 try {
                     let check = await refreshAccessToken();
                     if (check) {
-                        await getUserProfile();
+                        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user`, {
+                            headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
+                        })
+                        if (response.status === 200) {
+                            setUser(response.data);
+                            reset({
+                                firstName: response.data.firstName,
+                                lastName: response.data.lastName,
+                                email: response.data.email,
+                                gender: response.data?.gender,
+                                phone: response.data?.phone,
+                                address: response.data?.address,
+                                birthday: response.data?.birthday,
+                            })
+                        }
                     }
                 } catch (error) {
                     navigate("/login")
@@ -84,21 +122,34 @@ function UserProfile() {
             navigate("/login");
         }
         try {
-            const reponse = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user`, {
+            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user`, {
                 firstName: data.firstName,
                 lastName: data.lastName
             }, {
                 headers: { 'Authorization': "Bearer " + accessToken }
             });
-            window.location.reload()
+            if (response.status === 200) {
+                window.location.reload()
+            }
         } catch (error) {
             try {
                 let check = await refreshAccessToken();
                 if (check) {
-                    await handleSubmitForm();
+                    const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user`, {
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        phone: data?.phone,
+                        address: data?.address,
+                        gender: data.gender
+                    }, {
+                        headers: { 'Authorization': "Bearer " +  localStorage.getItem("access_token") }
+                    });
+                    if (response.status === 200) {
+                        window.location.reload()
+                    }
                 }
             } catch (error) {
-                navigate("/login")
+                console.log(error)
             }
         }
 
@@ -141,7 +192,33 @@ function UserProfile() {
                             <input name="lastName" className="px-4 py-2 rounded-lg outline-none border-2 border-white focus:border-cyan-300" {...register("lastName")} />
                             <p className="text-red-500 text-sm ml-4">{errors.lastName?.message}</p>
                         </div>
-
+                        <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Phone</span>
+                            <input name="phone" className="px-4 py-2 rounded-lg outline-none border-2 border-white focus:border-cyan-300" {...register("phone")} />
+                            <p className="text-red-500 text-sm ml-4">{errors.phone?.message}</p>
+                        </div>
+                        <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Address</span>
+                            <input name="address" className="px-4 py-2 rounded-lg outline-none border-2 border-white focus:border-cyan-300" {...register("address")} />
+                            <p className="text-red-500 text-sm ml-4">{errors.address?.message}</p>
+                        </div>
+                        {/* <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Birthday</span>
+                            <input name="birthday" className="px-4 py-2 rounded-lg outline-none border-2 border-white focus:border-cyan-300" {...register("birthday")} />
+                            <p className="text-red-500 text-sm ml-4">{errors.birthday?.message}</p>
+                        </div> */}
+                        <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Gender</span>
+                            <div className="flex flex-col">
+                                <div className="flex">
+                                    <input type="radio" id="male" name="gender" value="m"  {...register("gender")} />
+                                    <label htmlFor="male" className="ml-2 mr-8">Male</label>
+                                    <input type="radio" id="female" name="gender" value="f"  {...register("gender")} />
+                                    <label htmlFor="female" className="ml-2">Female</label>
+                                </div>
+                            </div>
+                            <p className="text-red-500 text-sm ml-4">{errors.gender?.message}</p>
+                        </div>
                         <div className="flex justify-end">
                             <button
                                 className="mr-4 px-8 py-2 rounded-lg shadow-xl bg-[#61dafb] hover:bg-[#61fbe2] mt-4"
@@ -179,7 +256,26 @@ function UserProfile() {
                             <div>{user.lastName}</div>
                             <AiFillCheckCircle size={20} className="self-center text-green-600 ml-auto" />
                         </div>
-
+                        <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Phone</span>
+                            <div>{user.phone}</div>
+                            <AiFillCheckCircle size={20} className="self-center text-green-600 ml-auto" />
+                        </div>
+                        <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Address</span>
+                            <div>{user.address}</div>
+                            <AiFillCheckCircle size={20} className="self-center text-green-600 ml-auto" />
+                        </div>
+                        {/* <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Birthday</span>
+                            <div>{user.birthday}</div>
+                            <AiFillCheckCircle size={20} className="self-center text-green-600 ml-auto" />
+                        </div> */}
+                        <div className="flex py-4 px-8 border-b">
+                            <span className="font-bold italic min-w-[200px]">Gender</span>
+                            <div>{user.gender === "m" ? "Male" : "Female"}</div>
+                            <AiFillCheckCircle size={20} className="self-center text-green-600 ml-auto" />
+                        </div>
                         <div className="flex justify-end">
                             <button
                                 className="px-8 py-2 rounded-lg shadow-xl bg-[#61dafb] hover:bg-[#61fbe2] mt-4"

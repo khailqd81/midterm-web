@@ -1,6 +1,9 @@
 package com.web.midterm.controller;
 
 import java.net.URI;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -11,7 +14,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -34,6 +39,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.web.midterm.entity.SocialUserDto;
+import com.web.midterm.entity.UpdateUser;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserDto;
 import com.web.midterm.entity.Verifytoken;
@@ -59,28 +65,41 @@ public class UserController {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String currentPrincipalName = authentication.getName();
 		User user = userService.findByEmail(currentPrincipalName);
-		Map<String, Object> response = new HashMap<>();
-		response.put("userId", user.getUserId());
-		response.put("email", user.getEmail());
-		response.put("firstName", user.getFirstName());
-		response.put("lastName", user.getLastName());
-		return ResponseEntity.ok().body(response);
+//		Map<String, Object> response = new HashMap<>();
+//		response.put("userId", user.getUserId());
+//		response.put("email", user.getEmail());
+//		response.put("firstName", user.getFirstName());
+//		response.put("lastName", user.getLastName());
+		return ResponseEntity.ok().body(user);
 	}
 
 	@PostMapping
-	public ResponseEntity<?> updateUser(@RequestBody Map<String, String> data) throws Exception {
+	public ResponseEntity<?> updateUser(@RequestBody @Valid UpdateUser updateUser) throws Exception {
 		// Get user from access token
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String currentPrincipalName = authentication.getName();
 		User user = userService.findByEmail(currentPrincipalName);
 		// validation
-		String firstName = data.get("firstName");
-		String lastName = data.get("lastName");
-		if (firstName == null || lastName == null) {
-			throw new Exception("Update user validation failed");
-		}
-		user.setFirstName(firstName);
-		user.setLastName(lastName);
+//		String firstName = data.get("firstName");
+//		String lastName = data.get("lastName");
+//		if (firstName == null || lastName == null) {
+//			throw new Exception("Update user validation failed");
+//		}
+		user.setFirstName(updateUser.getFirstName());
+		user.setLastName(updateUser.getLastName());
+		user.setPhone(updateUser.getPhone());
+		user.setAddress(updateUser.getAddress());
+		// Text day
+//		String birthday = updateUser.getBirthday();
+//		DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+//		sdf.setLenient(false);
+//		try {
+//			sdf.parse(birthday);
+//		} catch (ParseException e) {
+//			throw new Exception("Wrong date format");
+//		}
+//		user.setBirthday(sdf.parse(birthday));
+		user.setGender(updateUser.getGender());
 		System.out.println(user.getFirstName());
 		userService.save(user);
 		Map<String, Object> response = new HashMap<>();
@@ -231,13 +250,5 @@ public class UserController {
 		jsonResponse.put("message", "Refresh token Success");
 		jsonResponse.put("access_token", accessToken);
 		return ResponseEntity.ok().body(jsonResponse);
-	}
-
-	@Data
-	public class UpdateUser {
-		@NotNull(message = "FirstName is required")
-		private String firstName;
-		@NotNull(message = "Lastname is required")
-		private String lastName;
 	}
 }
