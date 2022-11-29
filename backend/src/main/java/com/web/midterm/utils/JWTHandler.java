@@ -17,8 +17,8 @@ public class JWTHandler {
 	public String generateAccessToken(String username, String uri, List<String> roleList) {
 		Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes());
 		String accessToken = JWT.create().withSubject(username)
-				//.withExpiresAt(new Date(System.currentTimeMillis() + 3600000 * 2))
-				.withExpiresAt(new Date(System.currentTimeMillis() + 6000))
+				.withExpiresAt(new Date(System.currentTimeMillis() + 3600000 * 2))
+				//.withExpiresAt(new Date(System.currentTimeMillis() + 6000))
 				.withIssuer(uri)
 				.withClaim("roles", roleList)
 				.sign(algorithm);
