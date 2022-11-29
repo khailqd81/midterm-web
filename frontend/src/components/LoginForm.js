@@ -28,6 +28,7 @@ function LoginForm() {
             email: userObject.email,
             firstName: userObject.family_name,
             lastName: userObject.given_name,
+            gender: "m"
         })
         // Set access_token and redirect to home page
         localStorage.setItem("access_token", responseFromBackEnd.data?.access_token);
@@ -38,7 +39,7 @@ function LoginForm() {
     // Initialize google login (use google identity service)
     useEffect(() => {
         google?.accounts.id.initialize({
-            client_id: "500883186769-7fb3cis78p1vsj67emal60beeks3sk3s.apps.googleusercontent.com",
+            client_id: `${process.env.REACT_APP_GOOGLE_CLIENT_ID}`,
             callback: handleCallBackResponse
         })
         google?.accounts.id.renderButton(

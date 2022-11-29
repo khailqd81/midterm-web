@@ -110,7 +110,10 @@ function UserProfile() {
         }
         return axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user`, {
             firstName: data.firstName,
-            lastName: data.lastName
+            lastName: data.lastName,
+            gender: data.gender,
+            phone: data.phone,
+            address: data.address
         }, {
             headers: { 'Authorization': "Bearer " + accessToken }
         });
