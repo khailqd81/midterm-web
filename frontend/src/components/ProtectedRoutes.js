@@ -2,7 +2,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link, Navigate, Outlet, useNavigate } from "react-router-dom";
 import ReactLoading from "react-loading";
-import {refreshAccessToken} from "./utils/auth"
+import { refreshAccessToken } from "./utils/auth"
+import { ToastContainer, toast } from 'react-toastify';
 function ProtectedRoutes() {
     const navigate = useNavigate();
     const [isAuth, setIsAuth] = useState(false);
@@ -36,10 +37,10 @@ function ProtectedRoutes() {
         }
         checkAuth();
     }, [])
-    
+
     if (isLoading) {
         return (<div className="mx-auto h-[100vh] relative">
-            <ReactLoading className="absolute mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={200} width={200} />
+            <ReactLoading className="absolute mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={100} width={100} />
         </div>)
     }
     const handleLogout = () => {
@@ -77,6 +78,20 @@ function ProtectedRoutes() {
                 </ul>
             </header>
             <div className="py-8 px-20 min-h-[calc(100vh-112px)]">
+                <div>
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover={false}
+                        theme="colored"
+                    />
+                </div>
                 <Outlet />
             </div>
             <footer className="flex justify-center px-20 py-4 bg-[#333] w-screen text-white">

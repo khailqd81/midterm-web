@@ -5,14 +5,27 @@ import { HiUserGroup } from "react-icons/hi"
 import { AiOutlineUsergroupAdd } from "react-icons/ai"
 import { BsFillCalendarCheckFill } from "react-icons/bs"
 import { refreshAccessToken } from "./utils/auth";
+import ReactLoading from "react-loading";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function Home() {
+    // const notify = () => toast('🦄 Create new group success!', {
+    //     position: "top-right",
+    //     autoClose: 5000,
+    //     hideProgressBar: false,
+    //     closeOnClick: true,
+    //     pauseOnHover: false,
+    //     draggable: true,
+    //     progress: undefined,
+    //     theme: "light",
+    // });
     const navigate = useNavigate();
     const [groupName, setGroupName] = useState("");     // input groupName value
     const [ownerGroup, setOwnerGroup] = useState([]);
     const [memberGroup, setMemberGroup] = useState([]);
     const [refreshPage, setRefreshPage] = useState(true);
-
+    const [isLoading, setIsLoading] = useState(true);
     useEffect(() => {
         async function getListGroup() {
             let accessToken = localStorage.getItem("access_token");
@@ -32,7 +45,7 @@ function Home() {
                 if (response.data?.owner.length > 0) {
                     setOwnerGroup(response.data?.owner)
                 }
-    
+
                 // Set member groups
                 let memberGroups = []
                 if (response.data?.coowner.length > 0) {
@@ -41,6 +54,7 @@ function Home() {
                 if (response.data?.member.length > 0) {
                     memberGroups = memberGroups.concat(response.data?.member);
                 }
+                setIsLoading(false);
                 setMemberGroup(memberGroups)
             } catch (error) {
                 try {
@@ -48,13 +62,20 @@ function Home() {
                     if (check) {
                         await getListGroup();
                     }
+                    setIsLoading(false);
                 } catch (error) {
                     navigate("/login")
                 }
 
-            }   
+            }
         }
         getListGroup();
+        // toast.promise(getListGroup,
+        //     {
+        //         pending: 'Get list group',
+        //         success: 'Get list group success 👌',
+        //         error: 'Get list group failed  🤯'
+        //     })
     }, [refreshPage, navigate])
 
     const handleCreateGroup = async () => {
@@ -75,7 +96,6 @@ function Home() {
             if (response.status === 200) {
                 setGroupName("");
                 setRefreshPage(!refreshPage);
-                alert("Create new group success")
             }
         } catch (error) {
             try {
@@ -107,6 +127,13 @@ function Home() {
         // }
         // console.log(groupId);
     }
+
+    if (isLoading) {
+        return (<div className="mx-auto h-[100vh] relative">
+            <ReactLoading className="fixed mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={100} width={100} />
+        </div>)
+    }
+
     return (
         <div>
             {/* Create new Group */}
@@ -118,7 +145,18 @@ function Home() {
                 </div>
                 <input className="outline-none px-4 py-2 border rounded mr-4 shadow-xl focus:border-cyan-300" placeholder="Group name" value={groupName} onChange={e => setGroupName(e.target.value)} />
                 {groupName.trim().length > 0
-                    ? <button className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2]" onClick={handleCreateGroup}>Create +</button>
+                    ? <button 
+                        className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2]"
+                        onClick={() => toast.promise(handleCreateGroup,
+                            {
+                                pending: 'Create new group',
+                                success: 'Create new group success 👌',
+                                error: 'Create new group failed  🤯'
+                            }, {
+                                style: {
+                                    marginTop: "50px"
+                                }
+                            })}>Create +</button>
                     : <button disabled className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl opacity-50" >Create +</button>
                 }
             </div>

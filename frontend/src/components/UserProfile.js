@@ -8,6 +8,7 @@ import * as yup from "yup";
 import { useMutation } from "react-query";
 import { AiFillCheckCircle } from "react-icons/ai"
 import { refreshAccessToken } from "./utils/auth"
+import ReactLoading from "react-loading";
 
 const phoneRegExp = /^(\s*|[0-9]{10})$/
 const schema = yup.object().shape({
@@ -36,6 +37,8 @@ function UserProfile() {
         resolver: yupResolver(schema)
     });
     const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(true);
+
     const [user, setUser] = useState({
         userId: "",
         firstName: "",
@@ -69,6 +72,7 @@ function UserProfile() {
                     address: response.data?.address,
                     birthday: response.data?.birthday,
                 })
+                setIsLoading(false);
             } catch (error) {
                 try {
                     let check = await refreshAccessToken();
@@ -89,6 +93,7 @@ function UserProfile() {
                             })
                         }
                     }
+                    setIsLoading(false);
                 } catch (error) {
                     navigate("/login")
                 }
@@ -153,6 +158,11 @@ function UserProfile() {
             }
         }
 
+    }
+    if (isLoading) {
+        return (<div className="mx-auto h-[100vh] relative">
+            <ReactLoading className="fixed mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={100} width={100} />
+        </div>)
     }
     // if (mutation.isSuccess) {
     //     window.location.reload()

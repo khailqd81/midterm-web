@@ -4,11 +4,12 @@ import * as yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
 import axios from "axios";
+import { useEffect } from "react";
 
 // Yup schema
 const schema = yup.object().shape({
-    firstName:  yup.string().required("is required"),
-    lastName:  yup.string().required("is required"),
+    firstName: yup.string().required("is required"),
+    lastName: yup.string().required("is required"),
     password: yup.string().required("is required"),
     confirmPassword: yup.string()
         .oneOf([yup.ref('password'), null], 'Passwords must match'),
@@ -16,7 +17,7 @@ const schema = yup.object().shape({
 }).required();
 
 function RegisterForm() {
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema)
     });
     const navigate = useNavigate();
@@ -29,13 +30,25 @@ function RegisterForm() {
     const onSubmit = (data) => {
         mutation.mutate(data)
     };
+    useEffect(() => {
+        reset({
+            gender: "m"
+        })
+    }, [])
+
 
     if (mutation.isSuccess) {
-        navigate("/");
+        return (
+            <div className="max-w-fit mx-auto my-4 py-6 px-10 shadow-lg border rounded bg-white absolute left-[50%] -translate-x-1/2">
+                <p className="border border-green-500 text-green-500 p-2 text-center my-2">Check your email for verification</p>
+                <Link className="text-center mb-2 mt-4 block w-full underline" to="/login">Login</Link>
+            </div>
+        )
+
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="max-w-fit mx-auto my-4 py-6 px-10 shadow-lg border rounded bg-white absolute left-[50%] -translate-x-1/2">
+        <form onSubmit={handleSubmit(onSubmit)} className="w-[90vw] sm:w-[80vw] md:max-w-fit mx-auto my-4 py-6 px-10 shadow-lg border rounded bg-white absolute left-[50%] -translate-x-1/2">
             <p className="text-center">Sign Up Form</p>
             {mutation.isError && <p className="border border-red-500 text-red-500 p-2 text-center my-2">{mutation.error.response?.data?.message || mutation.error.message}</p>}
 
@@ -68,10 +81,10 @@ function RegisterForm() {
             <div className="flex flex-col">
                 <label htmlFor="lastName">Gender</label>
                 <div className="flex">
-                <input type="radio" id="male" name="gender" value="m"  {...register("gender")} checked/>
-                <label for="male" className="ml-2 mr-8">Male</label>
-                <input type="radio" id="female" name="gender" value="f"  {...register("gender")} />
-                <label for="female" className="ml-2">Female</label>
+                    <input type="radio" id="male" name="gender" value="m"  {...register("gender")} />
+                    <label htmlFor="male" className="ml-2 mr-8">Male</label>
+                    <input type="radio" id="female" name="gender" value="f"  {...register("gender")} />
+                    <label htmlFor="female" className="ml-2">Female</label>
                 </div>
             </div>
             <button type="submit" className={mutation.isLoading ? "py-1 rounded w-full text-center bg-green-300 block mt-4" : "py-1 rounded w-full text-center bg-green-400 block hover:bg-green-300 mt-4"}>Sign up</button>

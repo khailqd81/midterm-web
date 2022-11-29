@@ -5,8 +5,21 @@ import { BsFillCalendarCheckFill } from "react-icons/bs"
 import { FaUserAlt } from "react-icons/fa"
 import { MdEmail } from "react-icons/md"
 import { BiLinkAlt } from "react-icons/bi"
-import {refreshAccessToken} from "./utils/auth"
+import { refreshAccessToken } from "./utils/auth"
+import ReactLoading from "react-loading";
+import { toast } from 'react-toastify';
+
 function GroupMember() {
+    const notifyCopy = () => toast.success('Link copied', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+    });
     const [inviteMail, setInviteMail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [inviteMailMessage, setInviteMailMessage] = useState("");
@@ -21,6 +34,7 @@ function GroupMember() {
         groupLink: "",
     })
     const [groupOwner, setGroupOwner] = useState({})
+    const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const params = useParams();
 
@@ -38,7 +52,7 @@ function GroupMember() {
             const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/${groupId}`, {
                 headers: { 'Authorization': "Bearer " + accessToken }
             })
-    
+
             if (response.status === 200) {
                 console.log(response.data.members.filter(m => m.role !== "owner"))
                 setGroupInfo({
@@ -47,12 +61,14 @@ function GroupMember() {
                 })
                 setGroupOwner(response.data.members.filter(m => m.role === "owner")[0].user)
             }
+            setIsLoading(false)
         } catch (error) {
             try {
                 let check = await refreshAccessToken();
                 if (check) {
                     await getGroupInfo();
                 }
+                setIsLoading(false);
             } catch (error) {
                 navigate("/login")
             }
@@ -87,7 +103,7 @@ function GroupMember() {
 
         if (inviteMail.length < 1) {
             setErrorMessage("Email is required")
-            return;
+            return Promise.reject();
         }
         let pattern = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
         let result = pattern.test(inviteMail);
@@ -95,21 +111,33 @@ function GroupMember() {
             setErrorMessage("Invali email format")
         }
 
-        e.target.disabled = true;
-        const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`, {
-            memberEmail: inviteMail,
-            groupId: groupInfo.groupId
-        }, {
-            headers: { 'Authorization': "Bearer " + accessToken }
-        })
-        e.target.disabled = false;
+        
+        try {
+            e.target.disabled = true;
+            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`, {
+                memberEmail: inviteMail,
+                groupId: groupInfo.groupId
+            }, {
+                headers: { 'Authorization': "Bearer " + accessToken }
+            })
+            e.target.disabled = false;
+            if (response.status === 200) {
+                setInviteMailMessage("Send mail success")
+                return Promise.resolve();
+            }
+            setInviteMailMessage(response.data.message);
 
-        setShowSendMailResult(true);
-        if (response.status === 200) {
-            setInviteMailMessage("Send mail success")
-            return;
+        } catch (error) {
+            await refreshAccessToken();
+            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`, {
+                memberEmail: inviteMail,
+                groupId: groupInfo.groupId
+            }, {
+                headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
+            })
         }
-        setInviteMailMessage(response.data.message);
+        e.target.disabled = false;
+        //setShowSendMailResult(true);
 
     }
 
@@ -140,15 +168,31 @@ function GroupMember() {
         })
         if (response.status === 200) {
             alert("Assign new role success")
+        } else {
+            await refreshAccessToken();
+            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/member`, {
+                userId: memberId,
+                groupId: groupInfo.groupId,
+                role: role
+            }, {
+                headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
+            })
         }
         if (role === "owner" || role === "kick") {
             await getGroupInfo();
         }
+
         e.target.disabled = false;
     }
 
     // userId of the current user
     const currentUserId = localStorage.getItem("userId");
+
+    if (isLoading) {
+        return (<div className="mx-auto h-[100vh] relative">
+            <ReactLoading className="fixed mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={100} width={100} />
+        </div>)
+    }
 
     return (
         <div>
@@ -178,7 +222,11 @@ function GroupMember() {
                                 </div>
                                 <div className="flex justify-end">
                                     <button
-                                        onClick={() => navigator.clipboard.writeText(`${process.env.REACT_APP_BASE_URL}/home/groups/join/${groupInfo.groupLink}`)}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`${process.env.REACT_APP_BASE_URL}/home/groups/join/${groupInfo.groupLink}`)
+                                            notifyCopy();
+                                        }
+                                        }
                                         className="mt-2 rounded px-4 py-2 shadow-xl hover:bg-[#61fbe2] bg-[#61dafb]">
                                         Copy
                                     </button>
@@ -207,7 +255,18 @@ function GroupMember() {
             <div className="flex flex-col mb-4">
                 <div className="flex">
                     <input onChange={(e) => { onInviteMailChange(e) }} value={inviteMail} className="px-4 py-2 border rounded focus:border-cyan-300 outline-none shadow-2xl" placeholder="Member's email" />
-                    <button onClick={(e) => handleSendInviteLink(e)} className="ml-4 rounded px-4 py-2 shadow-xl hover:bg-[#61fbe2] bg-[#61dafb] disabled:hover:bg-[#61dafb] disabled:opacity-50">Invite Member By Email</button>
+                    <button
+                        onClick={(e) => toast.promise(async () => await handleSendInviteLink(e),
+                            {
+                                pending: 'Send invite link',
+                                success: 'Send invite link success 👌',
+                                error: 'Send invite link failed  🤯'
+                            }, {
+                            className: "mt-10"
+                        })}
+                        className="ml-4 rounded px-4 py-2 shadow-xl hover:bg-[#61fbe2] bg-[#61dafb] disabled:hover:bg-[#61dafb] disabled:opacity-50">
+                        Invite Member By Email
+                    </button>
                     {showSendMailResult &&
                         <>
                             <div className="fixed top-0 left-0 flex bg-slate-400 w-screen h-screen opacity-75">
