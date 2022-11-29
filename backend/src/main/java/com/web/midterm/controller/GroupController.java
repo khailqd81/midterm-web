@@ -141,8 +141,12 @@ public class GroupController {
 		if (owner.getUserId() != group.getUser().getUserId()) {
 			throw new Exception("You don't have permission to change role");
 		}
-		if (role.equals("Kick")) {
+		if (role.equals("kick")) {
 			// Handle kick out member
+			groupService.deleteMember(userId, groupId);
+			Map<String, String> result = new HashMap<>();
+			result.put("message", "Kick out member OK");
+			return ResponseEntity.ok().body(result);
 		}
 		if (!groupService.saveMember(userId, groupId, role)) {
 			Map<String, String> jsonResponse = new HashMap<>();

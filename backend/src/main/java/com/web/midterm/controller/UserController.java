@@ -11,8 +11,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,11 +23,16 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.JWTVerifier;
 import com.web.midterm.entity.SocialUserDto;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserDto;
@@ -33,6 +40,8 @@ import com.web.midterm.entity.Verifytoken;
 import com.web.midterm.service.UserService;
 import com.web.midterm.service.VerifytokenService;
 import com.web.midterm.utils.JWTHandler;
+
+import lombok.Data;
 
 @RestController
 @RequestMapping("/api/user")
@@ -52,6 +61,30 @@ public class UserController {
 		User user = userService.findByEmail(currentPrincipalName);
 		Map<String, Object> response = new HashMap<>();
 		response.put("userId", user.getUserId());
+		response.put("email", user.getEmail());
+		response.put("firstName", user.getFirstName());
+		response.put("lastName", user.getLastName());
+		return ResponseEntity.ok().body(response);
+	}
+
+	@PostMapping
+	public ResponseEntity<?> updateUser(@RequestBody Map<String, String> data) throws Exception {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userService.findByEmail(currentPrincipalName);
+		// validation
+		String firstName = data.get("firstName");
+		String lastName = data.get("lastName");
+		if (firstName == null || lastName == null) {
+			throw new Exception("Update user validation failed");
+		}
+		user.setFirstName(firstName);
+		user.setLastName(lastName);
+		System.out.println(user.getFirstName());
+		userService.save(user);
+		Map<String, Object> response = new HashMap<>();
+		response.put("message", "update user success");
 		response.put("email", user.getEmail());
 		response.put("firstName", user.getFirstName());
 		response.put("lastName", user.getLastName());
@@ -168,8 +201,43 @@ public class UserController {
 		response.put("email", user.getEmail());
 		response.put("firstName", user.getFirstName());
 		response.put("lastName", user.getLastName());
-		//Map<String, String> jsonResponse = new HashMap<>();
+		// Map<String, String> jsonResponse = new HashMap<>();
 		response.put("message: ", "User Authenicated");
 		return ResponseEntity.ok().body(response);
+	}
+
+	@GetMapping("/refreshToken")
+	public ResponseEntity<?> refreshToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization)
+			throws Exception {
+		System.out.println(authorization);
+		if (authorization == null) {
+			throw new Exception("Empty refresh token");
+		}
+
+		// Check exists email
+		Algorithm algorithm = Algorithm.HMAC256(jwtHandler.getJwtSecret().getBytes());
+		JWTVerifier verifier = JWT.require(algorithm).build();
+		DecodedJWT decodedJWT = verifier.verify(authorization);
+		String email = decodedJWT.getSubject();
+		User theUser = userService.findByEmail(email);
+		if (theUser == null) {
+			throw new Exception("Email not found");
+		}
+
+		List<String> roles = Arrays.asList("ROLE_USER");
+		String uri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/refreshToken").toString();
+		String accessToken = jwtHandler.generateAccessToken(email, uri, roles);
+		Map<String, String> jsonResponse = new HashMap<>();
+		jsonResponse.put("message", "Refresh token Success");
+		jsonResponse.put("access_token", accessToken);
+		return ResponseEntity.ok().body(jsonResponse);
+	}
+
+	@Data
+	public class UpdateUser {
+		@NotNull(message = "FirstName is required")
+		private String firstName;
+		@NotNull(message = "Lastname is required")
+		private String lastName;
 	}
 }

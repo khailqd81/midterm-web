@@ -16,4 +16,5 @@ public interface GroupService {
 	public void createGroup(GroupDto g);
 	public void sendInviteLink(String toAddress, int groupId)  throws Exception;
 	public UserGroup findByUserIdAndGroupId(int userId, int groupId);
+	public void deleteMember(int userId, int groupId);
 }

@@ -12,12 +12,13 @@ import com.auth0.jwt.algorithms.Algorithm;
 @Service
 public class JWTHandler {
 	@Value("${jwt.secret}")
-	private String jwtSecret;
+	public String jwtSecret;
 	
 	public String generateAccessToken(String username, String uri, List<String> roleList) {
 		Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes());
 		String accessToken = JWT.create().withSubject(username)
-				.withExpiresAt(new Date(System.currentTimeMillis() + 3600000 * 2))
+				//.withExpiresAt(new Date(System.currentTimeMillis() + 3600000 * 2))
+				.withExpiresAt(new Date(System.currentTimeMillis() + 6000))
 				.withIssuer(uri)
 				.withClaim("roles", roleList)
 				.sign(algorithm);
@@ -31,4 +32,9 @@ public class JWTHandler {
 				.sign(algorithm);
 		return refreshToken;
 	}
+	public String getJwtSecret() {
+		return jwtSecret;
+	}
+	
+	
 }

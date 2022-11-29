@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link, Navigate, Outlet, useNavigate } from "react-router-dom";
 import ReactLoading from "react-loading";
-
+import {refreshAccessToken} from "./utils/auth"
 function ProtectedRoutes() {
     const navigate = useNavigate();
     const [isAuth, setIsAuth] = useState(false);
@@ -18,7 +18,6 @@ function ProtectedRoutes() {
                 const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user/isauth`, {
                     headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
                 })
-                console.log("response: ", response)
                 if (response.status === 200) {
                     setIsAuth(true);
                     localStorage.setItem("userId", response.data?.userId);
@@ -28,15 +27,16 @@ function ProtectedRoutes() {
                 }
                 setIsLoading(false);
             } catch (error) {
+                let check = await refreshAccessToken();
+                if (check) {
+                    await checkAuth();
+                }
                 setIsLoading(false);
-
             }
-
         }
         checkAuth();
     }, [])
-    console.log("isLoading: ", isLoading)
-
+    
     if (isLoading) {
         return (<div className="mx-auto h-[100vh] relative">
             <ReactLoading className="absolute mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={200} width={200} />
@@ -45,6 +45,7 @@ function ProtectedRoutes() {
     const handleLogout = () => {
         if (localStorage.getItem("access_token") != null) {
             localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
             localStorage.removeItem("firstName");
             localStorage.removeItem("lastName");
             localStorage.removeItem("email");

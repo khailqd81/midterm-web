@@ -100,6 +100,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			throw new UsernameNotFoundException("Account is not activated. Check your email for verify");
 		} 
 		
+		if (user.getProvider().equals("GOOGLE")) {
+			throw new UsernameNotFoundException("This email has been registered with Google before");
+		}
 		Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
 		authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 		return new org.springframework.security.core.userdetails.User(email, user.getPassword(), authorities);
@@ -109,6 +112,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	public User findByUserId(int id) {
 		
 		return userRepository.findByUserId(id);
+	}
+
+	@Override
+	public void save(User user) {
+		userRepository.save(user);
 	}
 
 }

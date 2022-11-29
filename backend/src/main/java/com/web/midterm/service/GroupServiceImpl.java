@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.mail.SimpleMailMessage;
@@ -130,6 +132,12 @@ public class GroupServiceImpl implements GroupService {
 	@Override
 	public UserGroup findByUserIdAndGroupId(int userId, int groupId) {
 		return userGroupRepository.findByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
+	}
+
+	@Override
+	@Transactional
+	public void deleteMember(int userId, int groupId) {
+		userGroupRepository.deleteByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
 	}
 	
 	
