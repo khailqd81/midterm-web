@@ -10,75 +10,79 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function Home() {
-    // const notify = () => toast('🦄 Create new group success!', {
-    //     position: "top-right",
-    //     autoClose: 5000,
-    //     hideProgressBar: false,
-    //     closeOnClick: true,
-    //     pauseOnHover: false,
-    //     draggable: true,
-    //     progress: undefined,
-    //     theme: "light",
-    // });
     const navigate = useNavigate();
     const [groupName, setGroupName] = useState("");     // input groupName value
     const [ownerGroup, setOwnerGroup] = useState([]);
     const [memberGroup, setMemberGroup] = useState([]);
     const [refreshPage, setRefreshPage] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
-    useEffect(() => {
-        async function getListGroup() {
-            let accessToken = localStorage.getItem("access_token");
-            if (accessToken == null) {
-                navigate("/login");
-            }
 
+    const callApiGetListGroup = async () => {
+        let accessToken = localStorage.getItem("access_token");
+        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/groups`, {
+            headers: { 'Authorization': "Bearer " + accessToken }
+        })
+
+        if (response.status !== 200) {
+            alert(response?.data?.message);
+            return;
+        }
+        // Set owner groups
+        if (response.data?.owner.length > 0) {
+            setOwnerGroup(response.data?.owner)
+        }
+
+        // Set member groups
+        let memberGroups = []
+        if (response.data?.coowner.length > 0) {
+            memberGroups = response.data?.coowner;
+        }
+        if (response.data?.member.length > 0) {
+            memberGroups = memberGroups.concat(response.data?.member);
+        }
+        setIsLoading(false);
+        setMemberGroup(memberGroups)
+    }
+
+    async function getListGroup() {
+        let accessToken = localStorage.getItem("access_token");
+        if (accessToken == null) {
+            navigate("/login");
+        }
+
+        try {
+            await callApiGetListGroup();
+            setIsLoading(false);
+        } catch (error) {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/groups`, {
-                    headers: { 'Authorization': "Bearer " + accessToken }
-                })
-                if (response.status !== 200) {
-                    alert(response?.data?.message);
-                    return;
-                }
-                // Set owner groups
-                if (response.data?.owner.length > 0) {
-                    setOwnerGroup(response.data?.owner)
-                }
-
-                // Set member groups
-                let memberGroups = []
-                if (response.data?.coowner.length > 0) {
-                    memberGroups = response.data?.coowner;
-                }
-                if (response.data?.member.length > 0) {
-                    memberGroups = memberGroups.concat(response.data?.member);
-                }
+                await refreshAccessToken();
+                await callApiGetListGroup();
                 setIsLoading(false);
-                setMemberGroup(memberGroups)
             } catch (error) {
-                try {
-                    let check = await refreshAccessToken();
-                    if (check) {
-                        await getListGroup();
-                    }
-                    setIsLoading(false);
-                } catch (error) {
-                    navigate("/login")
-                }
-
+                navigate("/login")
             }
         }
+    }
+
+    useEffect(() => {
         getListGroup();
-        // toast.promise(getListGroup,
-        //     {
-        //         pending: 'Get list group',
-        //         success: 'Get list group success 👌',
-        //         error: 'Get list group failed  🤯'
-        //     })
     }, [refreshPage, navigate])
 
-    const handleCreateGroup = async () => {
+
+    const callApiCreateGroup = async () => {
+        let accessToken = localStorage.getItem("access_token");
+        const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups`, {
+            groupName: groupName
+        }, {
+            headers: { 'Authorization': "Bearer " + accessToken }
+        })
+        if (response.status === 200) {
+            setGroupName("");
+            setRefreshPage(!refreshPage);
+        }
+    }
+
+    const handleCreateGroup = async (e) => {
         let accessToken = localStorage.getItem("access_token");
         if (accessToken == null) {
             navigate("/login");
@@ -88,24 +92,19 @@ function Home() {
             return;
         }
         try {
-            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups`, {
-                groupName: groupName
-            }, {
-                headers: { 'Authorization': "Bearer " + accessToken }
-            })
-            if (response.status === 200) {
-                setGroupName("");
-                setRefreshPage(!refreshPage);
-            }
+            e.target.disabled = true;
+            await callApiCreateGroup();
+            e.target.disabled = false;
         } catch (error) {
             try {
-                let check = await refreshAccessToken();
-                if (check) {
-                    await handleCreateGroup();
-                }
+                await refreshAccessToken();
+                await callApiCreateGroup();
+
             } catch (error) {
                 navigate("/login")
             }
+        } finally {
+            e.target.disabled = false;
         }
 
     }
@@ -145,18 +144,18 @@ function Home() {
                 </div>
                 <input className="outline-none px-4 py-2 border rounded mr-4 shadow-xl focus:border-cyan-300" placeholder="Group name" value={groupName} onChange={e => setGroupName(e.target.value)} />
                 {groupName.trim().length > 0
-                    ? <button 
-                        className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2]"
-                        onClick={() => toast.promise(handleCreateGroup,
+                    ? <button
+                        className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                        onClick={(e) => toast.promise(handleCreateGroup(e),
                             {
                                 pending: 'Create new group',
                                 success: 'Create new group success 👌',
                                 error: 'Create new group failed  🤯'
                             }, {
-                                style: {
-                                    marginTop: "50px"
-                                }
-                            })}>Create +</button>
+                            style: {
+                                marginTop: "50px"
+                            }
+                        })}>Create +</button>
                     : <button disabled className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl opacity-50" >Create +</button>
                 }
             </div>
