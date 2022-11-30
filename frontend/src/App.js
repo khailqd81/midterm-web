@@ -21,7 +21,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <div>
         <div>
-        <ToastContainer
+        {/* <ToastContainer
                         position="top-right"
                         autoClose={5000}
                         hideProgressBar={false}
@@ -32,7 +32,7 @@ function App() {
                         draggable
                         pauseOnHover={false}
                         theme="colored"
-                    />
+                    /> */}
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<LoginForm />} />
