@@ -9,21 +9,11 @@ import { refreshAccessToken } from "./utils/auth"
 import ReactLoading from "react-loading";
 import { toast } from 'react-toastify';
 
-function GroupMember() {
-    const notifyCopy = () => toast.success('Link copied', {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-    });
+export default function GroupInfo() {
+    /* Component State */
     const [inviteMail, setInviteMail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [inviteMailMessage, setInviteMailMessage] = useState("");
-    //const [isUpdateRole, setIsUpdateRole] = useState(false);
     const [showInviteBox, setShowInviteBox] = useState(false);
     const [showSendMailResult, setShowSendMailResult] = useState(false);
     const [groupInfo, setGroupInfo] = useState({
@@ -35,10 +25,69 @@ function GroupMember() {
     })
     const [groupOwner, setGroupOwner] = useState({})
     const [isLoading, setIsLoading] = useState(true);
+    /**/
     const navigate = useNavigate();
     const params = useParams();
 
-    // Get group information
+    // Toast success copied invite link
+    const notifyCopy = () => toast.success('Link copied', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+    });
+
+    // Call api group information
+    async function callApiGroupInfo() {
+        const groupId = params.groupId;
+        const accessToken = localStorage.getItem("access_token")
+        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/${groupId}`, {
+            headers: { 'Authorization': "Bearer " + accessToken }
+        })
+
+        if (response.status === 200) {
+            console.log(response.data.members.filter(m => m.role !== "owner"))
+            setGroupInfo({
+                ...response.data,
+                members: response.data.members.filter(m => m.role !== "owner")
+            })
+            setGroupOwner(response.data.members.filter(m => m.role === "owner")[0].user)
+        }
+        setIsLoading(false)
+    }
+
+    // Call api send invite mail 
+    async function callApiSendInviteMail() {
+        const accessToken = localStorage.getItem("access_token");
+        const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`, {
+            memberEmail: inviteMail,
+            groupId: groupInfo.groupId
+        }, {
+            headers: { 'Authorization': "Bearer " + accessToken }
+        })
+        if (response.status === 200) {
+            setInviteMailMessage("Send mail success")
+            return Promise.resolve();
+        }
+        setInviteMailMessage(response.data.message);
+    }
+
+    async function callApiAssignRole(memberId, role) {
+        const accessToken = localStorage.getItem("access_token");
+        const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/member`, {
+            userId: memberId,
+            groupId: groupInfo.groupId,
+            role: role
+        }, {
+            headers: { 'Authorization': "Bearer " + accessToken }
+        })
+    }
+
+    // Get group info, do some validate
     async function getGroupInfo() {
         const groupId = params.groupId;
         let accessToken = localStorage.getItem("access_token");
@@ -49,26 +98,11 @@ function GroupMember() {
             return;
         }
         try {
-            const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/${groupId}`, {
-                headers: { 'Authorization': "Bearer " + accessToken }
-            })
-
-            if (response.status === 200) {
-                console.log(response.data.members.filter(m => m.role !== "owner"))
-                setGroupInfo({
-                    ...response.data,
-                    members: response.data.members.filter(m => m.role !== "owner")
-                })
-                setGroupOwner(response.data.members.filter(m => m.role === "owner")[0].user)
-            }
-            setIsLoading(false)
+            await callApiGroupInfo();
         } catch (error) {
             try {
-                let check = await refreshAccessToken();
-                if (check) {
-                    await getGroupInfo();
-                }
-                setIsLoading(false);
+                await refreshAccessToken();
+                await callApiGroupInfo();
             } catch (error) {
                 navigate("/login")
             }
@@ -79,6 +113,7 @@ function GroupMember() {
         getGroupInfo();
     }, [params.groupId, navigate])
 
+    // On input mail invite change
     const onInviteMailChange = (e) => {
         setInviteMail(e.target.value)
         if (e.target.value.length < 1) {
@@ -96,6 +131,7 @@ function GroupMember() {
     }
 
     const handleSendInviteLink = async (e) => {
+        // Do some validate 
         const accessToken = localStorage.getItem("access_token");
         if (accessToken == null) {
             navigate("/login");
@@ -109,34 +145,18 @@ function GroupMember() {
         let result = pattern.test(inviteMail);
         if (!result) {
             setErrorMessage("Invali email format")
+            return Promise.reject();
         }
 
-        
         try {
             e.target.disabled = true;
-            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`, {
-                memberEmail: inviteMail,
-                groupId: groupInfo.groupId
-            }, {
-                headers: { 'Authorization': "Bearer " + accessToken }
-            })
+            await callApiSendInviteMail();
             e.target.disabled = false;
-            if (response.status === 200) {
-                setInviteMailMessage("Send mail success")
-                return Promise.resolve();
-            }
-            setInviteMailMessage(response.data.message);
-
         } catch (error) {
             await refreshAccessToken();
-            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`, {
-                memberEmail: inviteMail,
-                groupId: groupInfo.groupId
-            }, {
-                headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
-            })
+            await callApiSendInviteMail();
+            e.target.disabled = false;
         }
-        e.target.disabled = false;
         //setShowSendMailResult(true);
 
     }
@@ -149,40 +169,32 @@ function GroupMember() {
         if (role === "owner") {
             if (!window.confirm("Do you want to change the owner of the group?")) {
                 e.target.value = oldRole;
-                return
+                return Promise.reject();
             }
         }
         if (role === "kick") {
             if (!window.confirm("Do you want to kick out member of the group?")) {
                 e.target.value = oldRole;
-                return
+                return Promise.reject();
             }
         }
-        e.target.disabled = true;
-        const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/member`, {
-            userId: memberId,
-            groupId: groupInfo.groupId,
-            role: role
-        }, {
-            headers: { 'Authorization': "Bearer " + accessToken }
-        })
-        if (response.status === 200) {
-            alert("Assign new role success")
-        } else {
+
+        try {
+            e.target.disabled = true;
+            await callApiAssignRole(memberId, role);
+            e.target.disabled = false;
+        } catch (error) {
             await refreshAccessToken();
-            const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/groups/member`, {
-                userId: memberId,
-                groupId: groupInfo.groupId,
-                role: role
-            }, {
-                headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
-            })
-        }
-        if (role === "owner" || role === "kick") {
-            await getGroupInfo();
+            await callApiAssignRole(memberId, role);
+        } finally {
+            if (role === "owner" || role === "kick") {
+                await getGroupInfo();
+            }
+            e.target.disabled = false;
         }
 
-        e.target.disabled = false;
+
+
     }
 
     // userId of the current user
@@ -258,7 +270,7 @@ function GroupMember() {
                     <button
                         onClick={(e) => toast.promise(async () => await handleSendInviteLink(e),
                             {
-                                pending: 'Send invite link',
+                                pending: 'Sending invite link',
                                 success: 'Send invite link success 👌',
                                 error: 'Send invite link failed  🤯'
                             }, {
@@ -316,7 +328,17 @@ function GroupMember() {
                                                 m.role === "member"
                                                     ? <select
                                                         className="rounded-lg border px-2 py-1 capitalize outline-none rounded"
-                                                        onChange={(e) => handleRoleAssign(e, m.user.userId, e.target.value, m.role)}
+                                                        onChange={(e) =>
+                                                            toast.promise(handleRoleAssign(e, m.user.userId, e.target.value, m.role),
+                                                                {
+                                                                    pending: 'Assigning new role',
+                                                                    success: 'Assign new role success 👌',
+                                                                    error: 'Assign new role failed  🤯'
+                                                                },
+                                                                {
+                                                                    className: "mt-10"
+                                                                }
+                                                            )}
                                                     >
                                                         <option value={m.role}>{m.role}</option>
                                                         <option value="owner">Owner</option>
@@ -325,7 +347,17 @@ function GroupMember() {
                                                     </select>
                                                     : <select
                                                         className="rounded-lg border px-2 py-1 capitalize outline-none rounded"
-                                                        onChange={(e) => handleRoleAssign(e, m.user.userId, e.target.value, m.role)}
+                                                        onChange={(e) =>
+                                                            toast.promise(handleRoleAssign(e, m.user.userId, e.target.value, m.role),
+                                                                {
+                                                                    pending: 'Assigning new role',
+                                                                    success: 'Assign new role success 👌',
+                                                                    error: 'Assign new role failed  🤯'
+                                                                },
+                                                                {
+                                                                    className: "mt-10"
+                                                                }
+                                                            )}
                                                     >
                                                         <option value={m.role}>{m.role}</option>
                                                         <option value="owner">Owner</option>
@@ -349,4 +381,3 @@ function GroupMember() {
     )
 }
 
-export default GroupMember;

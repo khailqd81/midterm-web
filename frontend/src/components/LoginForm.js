@@ -92,7 +92,10 @@ function LoginForm() {
                 <input name="password" type="password" className="min-w-[30vw] px-4 py-2 rounded mb-1 mt-2 border border-gray-400 outline-cyan-300" {...register("password")} placeholder="Password" />
                 <p className="mb-4 text-red-500">{errors.password?.message}</p>
             </div>
-            <button type="submit" className={mutation.isLoading ? "py-1 rounded w-full text-center bg-green-300 block" : "py-1 rounded w-full text-center bg-green-400 block hover:bg-green-300"}>Sign in</button>
+            <button type="submit" className={mutation.isLoading ? "flex items-center justify-center py-1 rounded w-full text-center bg-green-300 block" : "flex items-center justify-center py-1 rounded w-full text-center bg-green-400 block hover:bg-green-300"}>
+                {mutation.isLoading && <span className="animate-spin inline-block h-4 w-4 border border-4 mr-2"></span>}
+                Sign in
+            </button>
             <Link className="text-center mb-2 mt-4 block w-full underline" to="/register">Create Account</Link>
             <div className="flex justify-center">
                 <div id="signInGoogle">Login with Google</div>

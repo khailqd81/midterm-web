@@ -25,12 +25,11 @@ import axios from "axios";
 const refreshAccessToken = async () => {
 
     const refreshToken = localStorage.getItem("refresh_token");
-    console.log("refreshToken:", refreshToken);
     try {
         const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user/refreshToken`, {
             headers: { 'Authorization': refreshToken }
         })
-        console.log(response)
+
         if (response.status === 200) {
             localStorage.setItem("access_token", response.data.access_token);
         }
