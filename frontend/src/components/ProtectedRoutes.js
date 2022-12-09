@@ -67,7 +67,7 @@ function ProtectedRoutes() {
                         <Link to="/home" className="no-underline text-white hover:text-[#61dafb]">Home</Link>
                     </li>
                     <li className="mr-4">
-                        <Link to="/presentation" className="no-underline text-white hover:text-[#61dafb]">Presentation</Link>
+                        <Link to="/home/presentation" className="no-underline text-white hover:text-[#61dafb]">Presentation</Link>
                     </li>
                 </ul>
                 <ul className="flex text-white m-0 p-0">
