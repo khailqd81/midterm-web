@@ -25,5 +25,7 @@
 /frontend/yarn-error.log*
 
 /.metadata
-
+/backend/target/classes
+/backend/target/classes/com/
+/backend/target/test-classes
 #/backend/src/main/resources/*.properties
