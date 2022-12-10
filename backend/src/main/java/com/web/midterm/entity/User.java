@@ -56,9 +56,14 @@ public class User {
 	
 	@Column(name="provider")
 	private String provider;
+	
 	@OneToMany(mappedBy = "primaryKey.user",cascade = CascadeType.ALL)
 	@JsonIgnore
 	private List<UserGroup> userGroup = new ArrayList<>();
+	
+	@OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+	@JsonIgnore
+	private List<Presentation> presentationList = new ArrayList<>();
 	
 	public User() {
 		

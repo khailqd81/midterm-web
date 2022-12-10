@@ -14,6 +14,7 @@ import GroupLink from './components/GroupLink';
 import UserProfile from './components/UserProfile';
 import Presentation from "./components/Presentation";
 import { ToastContainer } from 'react-toastify';
+import PresentationEdit from './components/PresentationEdit';
 const queryClient = new QueryClient()
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
               <Route element={<ProtectedRoutes />} >
                 <Route path="/home" element={<Home />} />
                 <Route path="/home/presentation" element={<Presentation/>} />
+                <Route path="/home/presentation/:presentId" element={<PresentationEdit />} />
                 <Route path="/home/profile" element={<UserProfile />} />
                 <Route path="/home/groups/:groupId" element={<GroupInfo />} />
               </Route>
