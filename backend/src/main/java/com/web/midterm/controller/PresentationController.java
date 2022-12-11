@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,6 +73,27 @@ public class PresentationController {
 		Presentation presentation = presentationService.findById(presentId);
 		Map<String, Presentation> message = new HashMap<>();
 		message.put("presentation", presentation);
+		return ResponseEntity.ok(message);
+	}
+	
+	@DeleteMapping("/{presentId}")
+	public ResponseEntity<?> deletePresentationDetail(@PathVariable int presentId) throws Exception {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userService.findByEmail(currentPrincipalName);
+		
+		Presentation presentation = presentationService.findById(presentId);
+		if (presentation == null) {
+			throw new Exception("Presentation Id not found");
+		}
+		
+		if (user.getUserId() != presentation.getUser().getUserId()) {
+			throw new Exception("Access Denied");
+		}
+		presentationService.deleteById(presentId);
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Delete presentation success");
 		return ResponseEntity.ok(message);
 	}
 }

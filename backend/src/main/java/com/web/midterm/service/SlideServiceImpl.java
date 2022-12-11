@@ -14,12 +14,17 @@ public class SlideServiceImpl implements SlideService {
 	
 	@Override
 	public Slide findById(int slideId) {
-		return slideRepository.findById(slideId);
+		return slideRepository.findBySlideIdOrderBySlideIdAsc(slideId);
 	}
 
 	@Override
 	public void save(Slide s) {
 		slideRepository.save(s);
+	}
+	
+	@Override
+	public void deleteById(int slideId) {
+		slideRepository.deleteById(slideId);
 	}
 
 }

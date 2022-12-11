@@ -8,5 +8,5 @@ public interface PresentationService {
 	public Presentation findById(int id);
 	public void save(Presentation p);
 	public List<Presentation> findByUserUserId(int userId);
-
+	public void deleteById(int preId);
 }

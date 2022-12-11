@@ -26,5 +26,11 @@ public class PresentationServiceImpl implements PresentationService {
 	public List<Presentation> findByUserUserId(int userId) {
 		return presentationRepository.findByUserUserId(userId);
 	}
+
+	@Override
+	public void deleteById(int preId) {
+		presentationRepository.deleteById(preId);
+	}
+
 	
 }

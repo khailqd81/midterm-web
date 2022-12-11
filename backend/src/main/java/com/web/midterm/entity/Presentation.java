@@ -26,11 +26,12 @@ public class Presentation {
 	@Column(name="pre_name")
 	private String preName;
 	
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne(cascade = { CascadeType.DETACH, CascadeType.MERGE, 
+			CascadeType.PERSIST, CascadeType.REFRESH })
 	@JoinColumn(name="user_id")
 	private User user;
 	
-	@OneToMany(mappedBy = "presentation",cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "presentation", cascade = CascadeType.ALL)
 	private List<Slide> slideList = new ArrayList<>();
 	
 	@Column(name="group_id")

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { HiUserGroup } from "react-icons/hi"
-import { BsFillCalendarCheckFill } from "react-icons/bs"
+import { BsFillCalendarCheckFill, BsFillTrashFill } from "react-icons/bs"
 import { AiOutlineUsergroupAdd } from "react-icons/ai"
 import { toast } from 'react-toastify';
 import axios from "axios";
@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 function Presentation() {
     const [slideQuestion, setSlideQuestion] = useState("Multiple choice")
     const [presentName, setPresentName] = useState("")
-    
+
     const [presenList, setPresenList] = useState([]);
     const [refreshPage, setRefreshPage] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +25,7 @@ function Presentation() {
             alert(response?.data?.message);
             return;
         }
-        
+
         // Set presentation list
         if (response.data?.presentationList.length > 0) {
             setPresenList(response.data?.presentationList)
@@ -54,9 +54,9 @@ function Presentation() {
         }
     }
     useEffect(() => {
-      getListPresent();
+        getListPresent();
     }, [refreshPage])
-    
+
     const callApiCreatePresent = async () => {
         let accessToken = localStorage.getItem("access_token");
         const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/presents`, {
@@ -81,7 +81,7 @@ function Presentation() {
         }
         try {
             e.target.disabled = true;
-            console.log("Present:",presentName)
+            console.log("Present:", presentName)
             await callApiCreatePresent();
             e.target.disabled = false;
         } catch (error) {
@@ -98,8 +98,47 @@ function Presentation() {
 
     }
     const handleGetPresentDetail = (presentId) => {
-        console.log(presentId)
         navigate(`/home/presentation/${presentId}`);
+    }
+
+    const callApiDeletePresent = async (preId) => {
+        let accessToken = localStorage.getItem("access_token");
+        const response = await axios.delete(`${process.env.REACT_APP_API_ENDPOINT}/api/presents/${preId}`, {
+            headers: {
+                'Authorization': "Bearer " + accessToken
+            }
+        })
+        if (response.status === 200) {
+            setPresenList(prev => {
+                var newPresentList = prev.filter(p => p.preId !== preId);
+                console.log(newPresentList)
+                return [
+                    ...newPresentList
+                ]
+            })
+        }
+    }
+
+    const handleDeletePresent = async (e, preId) => {
+        let accessToken = localStorage.getItem("access_token");
+        if (accessToken == null) {
+            navigate("/login");
+        }
+
+        try {
+            e.target.disabled = true;
+            await callApiDeletePresent(preId);
+            e.target.disabled = false;
+        } catch (error) {
+            try {
+                await refreshAccessToken();
+            } catch (error2) {
+                navigate("/login")
+            }
+            await callApiDeletePresent(preId);
+        } finally {
+            e.target.disabled = false;
+        }
     }
 
     if (isLoading) {
@@ -136,22 +175,40 @@ function Presentation() {
             <div>
                 <div className="font-bold text-2xl flex">
                     <HiUserGroup size={40} className="text-[#61dafb] mr-4" />
-                    <span className="self-center">Groups</span>
+                    <span className="self-center">Presentations</span>
                 </div>
                 <ul>
                     {presenList.length > 0
                         ?
                         presenList.map(g => {
                             return (
-                                <li className="first:mt-4 border-b flex justify-between px-4 py-4 cursor-pointer hover:bg-slate-200 first:border-t" key={g.preId} onClick={() => handleGetPresentDetail(g.preId)}>
-                                    <div>
-                                        <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">{g.preName[0]}</span>
-                                        {g.preName}
+                                <li className="first:mt-4 border-b flex justify-between cursor-pointer  first:border-t" key={g.preId} >
+                                    <div className="flex justify-between px-4 py-4 cursor-pointer grow hover:bg-slate-200" onClick={() => handleGetPresentDetail(g.preId)}>
+                                        <div>
+                                            <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">{g.preName[0]}</span>
+                                            {g.preName}
+                                        </div>
+                                        <div className="flex">
+                                            <BsFillCalendarCheckFill className="self-center mr-2" size={20} />
+                                            <span className="italic self-center mr-2">Created at:</span> {new Date(g.createdAt).toString().slice(0, 24)}
+                                        </div>
                                     </div>
+
                                     <div className="flex">
-                                        <BsFillCalendarCheckFill className="self-center mr-2" size={20} />
-                                        <span className="italic self-center mr-2">Created at:</span> {new Date(g.createdAt).toString().slice(0, 24)}
+                                        <BsFillTrashFill onClick={(e) => toast.promise(handleDeletePresent(e, g.preId),
+                                            {
+                                                pending: 'Delete Presentation',
+                                                success: 'Delete Presentation success 👌',
+                                                error: 'Delete Presentation failed  🤯'
+                                            }, {
+                                            style: {
+                                                marginTop: "50px"
+                                            }
+                                        })} className="self-center ml-4 hover:opacity-50" size={20} />
                                     </div>
+
+
+
                                 </li>
                             )
                         })

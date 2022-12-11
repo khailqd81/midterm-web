@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,11 +36,12 @@ public class SlideController {
 	private PresentationService presentationService;
 	@Autowired
 	private OptionRepository optionRepository;
+	
 	@PostMapping
 	public ResponseEntity<?> createSlide(@RequestBody Map<String, String> payload) throws Exception {
 		Slide s = new Slide();
 		String typeName = payload.get("typeName");
-		String presentId = payload.get("presentId");
+		String presentId = payload.get("preId");
 
 		if (typeName.equals("multiple")) {
 			s.setHeading("Multiple Choice");
@@ -53,8 +56,8 @@ public class SlideController {
 
 		s.setPresentation(p);
 		slideService.save(s);
-		Map<String, String> message = new HashMap<>();
-		message.put("message", "Create slide success");
+		Map<String, Slide> message = new HashMap<>();
+		message.put("slide", s);
 		return ResponseEntity.ok(message);
 	}
 
@@ -101,6 +104,18 @@ public class SlideController {
 	}
 	
 
+	@DeleteMapping("/{slideId}")
+	public ResponseEntity<?> deleteSlide(@PathVariable int slideId) throws Exception {
+		Slide s = slideService.findById(slideId);
+		if (s == null) {
+			throw new Exception("Slide Id not found");
+		}
+		slideService.deleteById(slideId);
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Delete slide success");
+		return ResponseEntity.ok(message);
+	}
+	
 //	@GetMapping
 //	public ResponseEntity<?> getSlides() {
 //		// Get user from access token
