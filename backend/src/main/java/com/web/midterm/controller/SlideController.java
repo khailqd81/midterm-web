@@ -1,6 +1,7 @@
 package com.web.midterm.controller;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.corundumstudio.socketio.SocketIOClient;
+import com.corundumstudio.socketio.SocketIOServer;
 import com.web.midterm.entity.Option;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.Slide;
@@ -24,6 +27,7 @@ import com.web.midterm.repo.OptionRepository;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
 import com.web.midterm.service.UserService;
+import com.web.midterm.socketio.SocketMessage;
 
 @RestController
 @RequestMapping("/api/slides")
@@ -36,7 +40,9 @@ public class SlideController {
 	private PresentationService presentationService;
 	@Autowired
 	private OptionRepository optionRepository;
-	
+	@Autowired
+	private SocketIOServer socketIOServer;
+
 	@PostMapping
 	public ResponseEntity<?> createSlide(@RequestBody Map<String, String> payload) throws Exception {
 		Slide s = new Slide();
@@ -63,9 +69,9 @@ public class SlideController {
 
 	@PutMapping
 	public ResponseEntity<?> updateSlide(@RequestBody Slide slide) throws Exception {
-		
+
 		int slideId = slide.getSlideId();
-			
+
 		Slide theSlide = slideService.findById(slideId);
 		if (theSlide == null) {
 			throw new Exception("Slide ID not found");
@@ -102,7 +108,26 @@ public class SlideController {
 		message.put("message", "Update slide success");
 		return ResponseEntity.ok(message);
 	}
-	
+
+	@PostMapping("/{slideId}")
+	public ResponseEntity<?> updateOptionList(@PathVariable int slideId, @RequestBody Option opt) throws Exception {
+		Slide s = slideService.findById(slideId);
+		if (s == null) {
+			throw new Exception("Slide Id not found");
+		}
+		System.out.println("Option: " + opt);
+		Option optDb = optionRepository.findById(opt.getOptionId());
+		if (optDb == null ) {
+			throw new Exception("Option Id not found");
+		}
+		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
+		optDb.setVote(optDb.getVote() + 1);
+		optionRepository.save(optDb);
+		this.sendSocketMessage(clients, optDb);
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Update slide success");
+		return ResponseEntity.ok(message);
+	}
 
 	@DeleteMapping("/{slideId}")
 	public ResponseEntity<?> deleteSlide(@PathVariable int slideId) throws Exception {
@@ -115,7 +140,7 @@ public class SlideController {
 		message.put("message", "Delete slide success");
 		return ResponseEntity.ok(message);
 	}
-	
+
 //	@GetMapping
 //	public ResponseEntity<?> getSlides() {
 //		// Get user from access token
@@ -140,5 +165,12 @@ public class SlideController {
 		Map<String, Slide> message = new HashMap<>();
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);
+	}
+
+	public static void sendSocketMessage(Collection<SocketIOClient> clients, Option message) {
+		for (SocketIOClient client : clients) {
+			client.sendEvent("read_message", message);
+
+		}
 	}
 }

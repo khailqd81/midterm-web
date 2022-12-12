@@ -6,8 +6,11 @@ import {
 } from 'recharts';
 import { refreshAccessToken } from "./utils/auth";
 import ReactLoading from "react-loading";
+import { useSocket } from "./customHook/useSocket";
 
 function PresentationEdit() {
+
+    const { isConnected, socketResponse, sendData } = useSocket("public", "khai");
     const [presentDetail, setPresentDetail] = useState({
         preId: "",
         createdAt: "",
@@ -39,6 +42,32 @@ function PresentationEdit() {
     const navigate = useNavigate();
     const params = useParams();
 
+    useEffect(() => {
+        console.log("socketResepon call: ", socketResponse)
+       setCurrentSlide(pre => {
+            let newOptionList = pre.optionList;
+            let index = newOptionList.findIndex(opt => opt.optionId === socketResponse.optionId)
+            newOptionList[index] = {
+                optionId: socketResponse.optionId,
+                optionName: socketResponse.optionName,
+                vote: socketResponse.vote
+            };
+            console.log("index", newOptionList[index])
+            return {
+                ...pre,
+                optionList: [...newOptionList]
+            }
+       })
+    }, [socketResponse])
+
+    const sendMessage = (e) => {
+        console.log("click send mesg")
+        e.preventDefault();
+        sendData({
+            content: "socket demo" + Math.random(),
+        });
+
+    };
     // Call api group information
     async function callApiPresentDetail() {
         const presentId = params.presentId;
@@ -213,9 +242,9 @@ function PresentationEdit() {
 
     const callApiDeleteSlide = async (slideId) => {
         let accessToken = localStorage.getItem("access_token");
-        const response = await axios.delete(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`,{
-            headers: { 
-                'Authorization': "Bearer " + accessToken 
+        const response = await axios.delete(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`, {
+            headers: {
+                'Authorization': "Bearer " + accessToken
             }
         })
         if (response.status === 200) {
@@ -260,6 +289,7 @@ function PresentationEdit() {
 
     return (
         <div className="mb-8 -mx-16">
+            <button className="p-10 border" onClick={(e) => sendMessage(e)}>Send messageType</button>
             <div className="font-bold text-2xl mb-8">
                 <span className="bg-[#61dafb] px-4 py-2 rounded-full uppercase mr-2">{presentDetail?.preName[0]}</span>
                 <span className="italic">{presentDetail.preName}</span>
@@ -275,7 +305,7 @@ function PresentationEdit() {
                         {presentDetail.slideList.length > 0 && presentDetail.slideList.map((slide, index) => {
                             return (
                                 <li className="flex mt-2 flex-col" key={slide.slideId} onClick={() => onChangeSlide(index)}>
-                                    
+
                                     <div className="flex">
                                         <p>{index + 1}</p>
                                         {
@@ -288,7 +318,7 @@ function PresentationEdit() {
                                                 </div>
                                         }
                                         <div className="ml-2">
-                                        <span onClick={(e) => handleDeleteSlide(e, slide.slideId)} className=" cursor-pointer hover:text-red-500 disabled:hover:text-red-500 disabled:opacity-50">X</span>
+                                            <span onClick={(e) => handleDeleteSlide(e, slide.slideId)} className=" cursor-pointer hover:text-red-500 disabled:hover:text-red-500 disabled:opacity-50">X</span>
                                         </div>
                                     </div>
 
