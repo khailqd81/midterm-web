@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 
 // Yup schema
 const schema = yup.object().shape({
@@ -21,9 +20,9 @@ function RegisterForm() {
     const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema)
     });
-    const navigate = useNavigate();
+    //const navigate = useNavigate();
     const [errorMessage, setErrorMessage] = useState("");
-    const [isSuccess, setIsSuccess] = useState(false);
+   // const [isSuccess, setIsSuccess] = useState(false);
     // Handle register new user
     const mutation = useMutation((data) => {
         return axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/user/register`, { ...data, roles: [data.roles] });
@@ -143,6 +142,7 @@ function RegisterForm() {
                 Sign up
             </button>
             <Link className="text-center mb-2 mt-4 block w-full underline" to="/login">Return to Login Page</Link>
+            <Link className="text-center mb-2 mt-4 block w-full underline" to="/">Return home</Link>
         </form>
     );
 }

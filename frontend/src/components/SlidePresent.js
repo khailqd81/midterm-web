@@ -25,23 +25,19 @@ function SlidePresent() {
     // Call api group information
     async function callApiSlideDetail() {
         const slideId = params.slideId;
-        const accessToken = localStorage.getItem("access_token")
-        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`, {
-            headers: { 'Authorization': "Bearer " + accessToken }
-        })
+        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`)
 
         if (response.status === 200) {
-            setSlideDetail(response.data.slide);
+            let newSlideDetail = response.data.slide
+            newSlideDetail.optionList.sort((a, b) => a.optionId - b.optionId)
+            setSlideDetail(newSlideDetail);
         }
         setIsLoading(false)
     }
     // Get group info, do some validate
     async function getSlideDetail() {
         const slideId = params.slideId;
-        // let accessToken = localStorage.getItem("access_token");
-        // if (accessToken == null) {
-        //     navigate("/login");
-        // }
+
         if (slideId == null || slideId.trim().length <= 0) {
             return;
         }
@@ -59,7 +55,6 @@ function SlidePresent() {
     }, [socketResponse, params.slideId, navigate])
 
     const onInputChange = (e, optionId) => {
-        console.log(e.target.value)
         setAnswer({
             optionName: e.target.value,
             optionId: optionId
@@ -87,16 +82,24 @@ function SlidePresent() {
 
     const handleSubmitForm = async (e) => {
         e.preventDefault()
+        // console.log({
+        //     slideId: slideDetail.slideId,
+        //     option: answer
+        // })
+        sendData({
+            slideId: slideDetail.slideId,
+            option: answer
+        });
         // let accessToken = localStorage.getItem("access_token");
         // if (accessToken == null) {
         //     navigate("/login");
         // }
 
-        try {
-            await callApiSubmitOption();
-        } catch (error) {
-            await callApiSubmitOption();
-        }
+        // try {
+        //     await callApiSubmitOption();
+        // } catch (error) {
+        //     await callApiSubmitOption();
+        // }
     }
 
     if (isLoading) {
@@ -106,7 +109,7 @@ function SlidePresent() {
     }
 
     return (
-        <div className="flex bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh] ">
+        <div className="flex flex-col md:flex-row bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh] ">
             <div className="basis-1/2 border w-full h-full bg-white">
                 <div className="mt-8 ml-4 mb-4 text-xl font-bold">{slideDetail?.heading}</div>
                 {

@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PreDestroy;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 
 import com.corundumstudio.socketio.AckRequest;
@@ -15,12 +16,16 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
-import com.web.midterm.socketio.SocketMessage;
+import com.web.midterm.socketio.SocketService;
+import com.web.midterm.socketio.SocketVoteMessage;
 
 @org.springframework.context.annotation.Configuration
 public class SocketIOConfig {
 	
 	private SocketIOServer server;
+//	
+//	@Autowired
+//	private SocketService socketService;
 	
 	@Bean
 	public SocketIOServer socketIOServer() {
@@ -44,17 +49,15 @@ public class SocketIOConfig {
 			}
 		});
 		
+//		server.addEventListener("send_vote", SocketVoteMessage.class, new DataListener<SocketVoteMessage>() {
+//			@Override
+//			public void onData(SocketIOClient client, SocketVoteMessage data, AckRequest ackSender) throws Exception {
+//				System.out.println("onVoteReceived");
+//				System.out.println("Data: " + data);
+//				socketService.sendSocketMessage(client, data, data.getRoom());
+//			}
+//		});
 		
-		server.addEventListener("send_message", SocketMessage.class, new DataListener<SocketMessage>() {
-
-			@Override
-			public void onData(SocketIOClient client, SocketMessage data, AckRequest ackSender) throws Exception {
-				System.out.println("onChatReceived");
-				System.out.println("Data: " + data);
-				client.sendEvent("read_message", "notify");
-			}
-			
-		});
 		server.addDisconnectListener(new DisconnectListener() {
 			@Override
 			public void onDisconnect(SocketIOClient client) {

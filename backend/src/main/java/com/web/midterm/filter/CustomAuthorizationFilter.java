@@ -38,7 +38,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				|| request.getServletPath().equals("/api/user/oauth2")
 				|| request.getServletPath().equals("/api/user/confirm")
 				|| request.getServletPath().equals("/api/user/refreshToken")
-				|| request.getServletPath().contains("/api/slides")) {
+				|| request.getServletPath().contains("/api/slides/vote")) {
 			filterChain.doFilter(request, response);
 		} else {
 			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);

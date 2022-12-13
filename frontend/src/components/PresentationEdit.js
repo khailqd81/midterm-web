@@ -17,21 +17,6 @@ function PresentationEdit() {
         preName: "",
         slideList: [],
     })
-    // const [chartData, setChartData] = useState([{
-    //     "optionName": "Option A",
-    //     "vote": 1
-    // },
-    // {
-    //     "optionName": "Option B",
-    //     "vote": 20
-    // },
-    // {
-    //     "optionName": "Option C",
-    //     "vote": 10
-    // },])
-
-    // const [optionAmount, setOptionAmount] = useState(0);
-    // const [slideQuestion, setSlideQuestion] = useState("Multiple choice")
     const [currentSlide, setCurrentSlide] = useState({
         slideId: "",
         heading: "",
@@ -43,14 +28,14 @@ function PresentationEdit() {
     const params = useParams();
 
     useEffect(() => {
-        console.log("socketResepon call: ", socketResponse)
        setCurrentSlide(pre => {
+            const option = socketResponse.option;
             let newOptionList = pre.optionList;
-            let index = newOptionList.findIndex(opt => opt.optionId === socketResponse.optionId)
+            let index = newOptionList.findIndex(opt => opt.optionId === option.optionId)
             newOptionList[index] = {
-                optionId: socketResponse.optionId,
-                optionName: socketResponse.optionName,
-                vote: socketResponse.vote
+                optionId: option.optionId,
+                optionName: option.optionName,
+                vote: option.vote
             };
             console.log("index", newOptionList[index])
             return {
@@ -64,7 +49,11 @@ function PresentationEdit() {
         console.log("click send mesg")
         e.preventDefault();
         sendData({
-            content: "socket demo" + Math.random(),
+            option: {
+                optionId: "demo",
+                optionName: "demo",
+                vote: "demo"
+            }
         });
 
     };
@@ -79,9 +68,11 @@ function PresentationEdit() {
         if (response.status === 200) {
             let newPresentDetail = { ...response.data.presentation }
             newPresentDetail.slideList.sort((a, b) => a.slideId - b.slideId)
+            newPresentDetail.slideList[0]?.optionList?.sort((a, b) => a.optionId - b.optionId)
             setPresentDetail({
                 ...newPresentDetail,
             })
+
             setCurrentSlide(newPresentDetail.slideList[0])
             //setSlideQuestion(newPresentDetail.slideList[0].heading);
             //setChartData(newPresentDetail.slideList[0].optionList);
@@ -103,10 +94,11 @@ function PresentationEdit() {
         } catch (error) {
             try {
                 await refreshAccessToken();
-                await callApiPresentDetail();
+                
             } catch (error) {
                 navigate("/login")
             }
+            await callApiPresentDetail();
         }
     }
 

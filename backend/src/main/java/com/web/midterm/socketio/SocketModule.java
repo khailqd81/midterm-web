@@ -11,6 +11,7 @@ import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
 
+
 public class SocketModule {
 	private final SocketIOServer server;
     private final SocketService socketService;
@@ -20,11 +21,11 @@ public class SocketModule {
         this.socketService = socketService;
         server.addConnectListener(onConnected());
         server.addDisconnectListener(onDisconnected());
-        server.addEventListener("send_message", SocketMessage.class, onChatReceived());
+        server.addEventListener("send_message", SocketVoteMessage.class, onChatReceived());
 
     }
     
-    private DataListener<SocketMessage> onChatReceived() {
+    private DataListener<SocketVoteMessage> onChatReceived() {
         return (senderClient, data, ackSender) -> {
         	System.out.println("onChatReceived");
             //socketService.saveMessage(senderClient, data);

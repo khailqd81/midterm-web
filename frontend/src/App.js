@@ -16,6 +16,7 @@ import Presentation from "./components/Presentation";
 import { ToastContainer } from 'react-toastify';
 import PresentationEdit from './components/PresentationEdit';
 import SlidePresent from './components/SlidePresent';
+import LandingPage from './components/LandingPage';
 const queryClient = new QueryClient()
 
 function App() {
@@ -38,12 +39,12 @@ function App() {
                     /> */}
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<LoginForm />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/register" element={<RegisterForm />} />
               <Route path="/user/confirm" element={<UserConfirm />} />
               <Route path="/home/groups/join/:groupLink" element={<GroupLink />} />
-              <Route path="/home/slide/:slideId" element={<SlidePresent />} />
+              <Route path="/home/slide/vote/:slideId" element={<SlidePresent />} />
               <Route element={<ProtectedRoutes />} >
                 <Route path="/home" element={<Home />} />
                 <Route path="/home/presentation" element={<Presentation/>} />

@@ -79,7 +79,8 @@ function LoginForm() {
     return (
         // Login form
         <form onSubmit={handleSubmit(onSubmit)} className="w-[90vw] sm:w-[80vw] md:max-w-fit mx-auto py-6 px-10 shadow-lg border rounded bg-white absolute top-[50%] left-[50%] -translate-y-1/2 -translate-x-1/2">
-            <p className="text-center">Sign In Form</p>
+
+            <p className="text-center font-bold">Sign In To KahooClone</p>
             {mutation.isError && <p className="border border-red-500 text-red-500 p-2 text-center my-2">{mutation.error.response?.data?.message || mutation.error.message}</p>}
             <div className="flex flex-col">
                 <label htmlFor="email">Email</label>
@@ -96,7 +97,12 @@ function LoginForm() {
                 {mutation.isLoading && <span className="animate-spin inline-block h-4 w-4 border border-4 mr-2"></span>}
                 Sign in
             </button>
-            <Link className="text-center mb-2 mt-4 block w-full underline" to="/register">Create Account</Link>
+            <div className="flex">
+                <Link className="text-center mb-2 mt-4 block w-full underline" to="/register">Create Account</Link>
+                <Link className="text-center mb-2 mt-4 block w-full underline" to="/">Return home</Link>
+            </div>
+
+
             <div className="flex justify-center">
                 <div id="signInGoogle">Login with Google</div>
             </div>

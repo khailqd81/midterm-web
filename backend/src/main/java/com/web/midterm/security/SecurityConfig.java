@@ -1,8 +1,5 @@
 package com.web.midterm.security;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,7 +48,7 @@ public class SecurityConfig {
 		http.csrf().disable();
 
 		http.authorizeHttpRequests().antMatchers("/api/login").permitAll().antMatchers("/api/user/register").permitAll()
-				.antMatchers("/api/slides/**").permitAll()
+				.antMatchers("/api/slides/vote/**").permitAll()
 				.antMatchers("/api/user/confirm").permitAll().antMatchers("/api/user/oauth2").permitAll()
 				.antMatchers("/api/user/refreshToken").permitAll().antMatchers("/api/groups/**").authenticated()
 				.antMatchers("/api/user/**").authenticated();

@@ -98,7 +98,7 @@ function ProtectedRoutes() {
                 <Outlet />
             </div>
             <footer className="flex justify-center px-20 py-4 bg-[#333] w-screen text-white">
-                <p className="m-0">Copyright@HCMUS 2022</p>
+                <p className="m-0">Copyright@HCMUS-19120250 Phạm Tiến Khải 2022</p>
             </footer>
         </>
         : <Navigate to="/login" />);

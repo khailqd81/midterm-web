@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,14 +25,11 @@ import com.web.midterm.entity.Slide;
 import com.web.midterm.repo.OptionRepository;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
-import com.web.midterm.service.UserService;
-import com.web.midterm.socketio.SocketMessage;
 
 @RestController
 @RequestMapping("/api/slides")
 public class SlideController {
-	@Autowired
-	private UserService userService;
+
 	@Autowired
 	private SlideService slideService;
 	@Autowired
@@ -166,7 +162,20 @@ public class SlideController {
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);
 	}
+	
+	@GetMapping("/vote/{slideId}")
+	public ResponseEntity<?> getPresentationDetailVote(@PathVariable int slideId) {
+		// Get user from access token
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//		String currentPrincipalName = authentication.getName();
+//		User user = userService.findByEmail(currentPrincipalName);
 
+		Slide slide = slideService.findById(slideId);
+		Map<String, Slide> message = new HashMap<>();
+		message.put("slide", slide);
+		return ResponseEntity.ok(message);
+	}
+	
 	public static void sendSocketMessage(Collection<SocketIOClient> clients, Option message) {
 		for (SocketIOClient client : clients) {
 			client.sendEvent("read_message", message);

@@ -14,10 +14,17 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 public class Presentation {
 	@Id
 	@Column(name="pre_id")
@@ -34,8 +41,10 @@ public class Presentation {
 	@OneToMany(mappedBy = "presentation", cascade = CascadeType.ALL)
 	private List<Slide> slideList = new ArrayList<>();
 	
-	@Column(name="group_id")
-	private int groupId;
+	//@Column(name="group_id")
+	@ManyToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name="group_id")
+	private Group group;
 	
 	@Column(name="created_at")
 	private Date createdAt;
