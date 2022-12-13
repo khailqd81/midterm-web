@@ -3,13 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
     BarChart, Bar, LabelList, XAxis
 } from 'recharts';
-import { refreshAccessToken } from "./utils/auth";
 import ReactLoading from "react-loading";
 import axios from "axios";
 import { useSocket } from "./customHook/useSocket";
 
 function SlidePresent() {
-    const { isConnected, socketResponse, sendData } = useSocket("public", "khai");
+    const { isConnected, socketResponse, sendData } = useSocket("public", "khai" + Math.random());
     const [slideDetail, setSlideDetail] = useState({
         slideId: "",
         heading: "",
@@ -63,21 +62,21 @@ function SlidePresent() {
 
 
     // Call api group information
-    async function callApiSubmitOption() {
-        const accessToken = localStorage.getItem("access_token")
-        const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideDetail.slideId}`,
-            {
-                ...answer
-            }
-            , {
-                headers: { 'Authorization': "Bearer " + accessToken }
+    // async function callApiSubmitOption() {
+    //     const accessToken = localStorage.getItem("access_token")
+    //     const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideDetail.slideId}`,
+    //         {
+    //             ...answer
+    //         }
+    //         , {
+    //             headers: { 'Authorization': "Bearer " + accessToken }
 
-            })
+    //         })
 
-        if (response.status === 200) {
-            console.log("submit success")
-        }
-    }
+    //     if (response.status === 200) {
+    //         console.log("submit success")
+    //     }
+    // }
 
 
     const handleSubmitForm = async (e) => {
@@ -109,8 +108,10 @@ function SlidePresent() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh] ">
-            <div className="basis-1/2 border w-full h-full bg-white">
+        <div>
+        <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">KahooClone</h1>
+        <div className="flex justify-between flex-col md:flex-row px-8 py-10 pb-20 mx-4 h-[70vh] ">
+            <div className="basis-1/2 border w-full h-full bg-white shadow-xl rounded-lg">
                 <div className="mt-8 ml-4 mb-4 text-xl font-bold">{slideDetail?.heading}</div>
                 {
                     slideDetail?.optionList.length > 0 &&
@@ -128,12 +129,12 @@ function SlidePresent() {
                 }
 
             </div>
-            <form className="bg-white m-10" onSubmit={(e) => handleSubmitForm(e)}>
-                <div>Select option:</div>
+            <form className="bg-white h-full shadow-xl rounded-lg px-8 py-4" onSubmit={(e) => handleSubmitForm(e)}>
+                <div className="font-bold text-xl">Select option:</div>
                 {slideDetail?.optionList.length > 0 ?
                     slideDetail?.optionList.map(opt => {
                         return (
-                            <div>
+                            <div className="border">
                                 <input
                                     id={opt.optionId}
                                     name="option"
@@ -153,6 +154,7 @@ function SlidePresent() {
 
                 <button type="submit">Submit</button>
             </form>
+        </div>
         </div>
     )
 }

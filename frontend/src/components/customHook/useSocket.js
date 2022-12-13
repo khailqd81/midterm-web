@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as io from "socket.io-client";
 
 export const useSocket = (room, username) => {
@@ -15,13 +15,24 @@ export const useSocket = (room, username) => {
 
     const sendData = useCallback(
         (payload) => {
-            socket.emit("send_vote", {
-                room: room,
-                username: username,
-                option: payload.option,
-                slideId: payload.slideId
-                //messageType: "CLIENT",
-            });
+            if (payload.message === "send_update") {
+                //console.log(payload.slide)
+                socket.emit("send_update", {
+                    room: room,
+                    username: username,
+                    slide: payload.slide
+                    //messageType: "CLIENT",
+                });
+            } else {
+                socket.emit("send_vote", {
+                    room: room,
+                    username: username,
+                    option: payload.option,
+                    slideId: payload.slideId
+                    //messageType: "CLIENT",
+                });
+            }
+
         },
         [socket, room]
     );
@@ -48,8 +59,9 @@ export const useSocket = (room, username) => {
             setSocketResponse({
                 room: res.room,
                 username: res.username,
-                option: res.option,
-                slideId: res.slideId
+                slide: res?.slide,
+                option: res?.option,
+                slideId: res?.slideId
                 // content: res.content,
                 // messageType: res.messageType,
                 // createdDateTime: res.createdDateTime,

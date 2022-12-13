@@ -38,8 +38,5 @@ function UserConfirm() {
         </div>
     )
 }
-{/* <div>
-            <div className="mt-4 text-center text-2xl">{message}</div>
-            <Link className="text-center mb-2 mt-4 block w-full underline" to="/login">Return to Login Page</Link>
-        </div> */}
+
 export default UserConfirm;

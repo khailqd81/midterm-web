@@ -13,10 +13,10 @@ import GroupInfo from './components/GroupInfo';
 import GroupLink from './components/GroupLink';
 import UserProfile from './components/UserProfile';
 import Presentation from "./components/Presentation";
-import { ToastContainer } from 'react-toastify';
 import PresentationEdit from './components/PresentationEdit';
 import SlidePresent from './components/SlidePresent';
 import LandingPage from './components/LandingPage';
+
 const queryClient = new QueryClient()
 
 function App() {

@@ -25,6 +25,8 @@ import com.web.midterm.entity.Slide;
 import com.web.midterm.repo.OptionRepository;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
+import com.web.midterm.socketio.SocketService;
+import com.web.midterm.socketio.SocketUpdateMessage;
 
 @RestController
 @RequestMapping("/api/slides")
@@ -38,7 +40,8 @@ public class SlideController {
 	private OptionRepository optionRepository;
 	@Autowired
 	private SocketIOServer socketIOServer;
-
+	@Autowired
+	private SocketService socketService;
 	@PostMapping
 	public ResponseEntity<?> createSlide(@RequestBody Map<String, String> payload) throws Exception {
 		Slide s = new Slide();
@@ -100,6 +103,14 @@ public class SlideController {
 		}
 		theSlide.setHeading(slide.getHeading());
 		slideService.save(theSlide);
+		
+		// Handle send update slide to client through socket
+		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
+		SocketUpdateMessage socketMessage = new SocketUpdateMessage();
+		socketMessage.setRoom("public");
+		socketMessage.setUsername("khai");
+		socketMessage.setSlide(theSlide);
+		socketService.sendUpdateSlideToClient(clients, socketMessage, "public");
 		Map<String, String> message = new HashMap<>();
 		message.put("message", "Update slide success");
 		return ResponseEntity.ok(message);

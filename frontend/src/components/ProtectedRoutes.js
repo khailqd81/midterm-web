@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, Outlet, useNavigate } from "react-router-dom";
 import ReactLoading from "react-loading";
 import { refreshAccessToken } from "./utils/auth"
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 function ProtectedRoutes() {
     const navigate = useNavigate();
     const [isAuth, setIsAuth] = useState(false);
@@ -97,7 +97,7 @@ function ProtectedRoutes() {
                 </div>
                 <Outlet />
             </div>
-            <footer className="flex justify-center px-20 py-4 bg-[#333] w-screen text-white">
+            <footer className="flex justify-center px-20 py-4 bg-[#333] text-white">
                 <p className="m-0">Copyright@HCMUS-19120250 Phạm Tiến Khải 2022</p>
             </footer>
         </>

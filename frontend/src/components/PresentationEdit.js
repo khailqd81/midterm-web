@@ -2,15 +2,18 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    BarChart, Bar, LabelList, XAxis
+    BarChart, Bar, LabelList, XAxis, ResponsiveContainer
 } from 'recharts';
 import { refreshAccessToken } from "./utils/auth";
 import ReactLoading from "react-loading";
 import { useSocket } from "./customHook/useSocket";
+import { toast } from 'react-toastify';
 
 function PresentationEdit() {
 
     const { isConnected, socketResponse, sendData } = useSocket("public", "khai");
+    const [isLoading, setIsLoading] = useState(true);
+    const [fullScreenMode, setFullScreenMode] = useState(false);
     const [presentDetail, setPresentDetail] = useState({
         preId: "",
         createdAt: "",
@@ -22,16 +25,47 @@ function PresentationEdit() {
         heading: "",
         optionList: []
     })
-    const [isLoading, setIsLoading] = useState(true);
-    /**/
     const navigate = useNavigate();
     const params = useParams();
 
+    // Notify copy link presentation
+    const notifyCopy = () => toast.success('Link copied', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+    });
+
+    // Initial call
     useEffect(() => {
-       setCurrentSlide(pre => {
-            const option = socketResponse.option;
+        getPresentDetail();
+    }, [params.presentId, navigate])
+
+    // When socket resposne change
+    useEffect(() => {
+        setCurrentSlide(pre => {
+            // if (socketResponse?.slide) {
+            //     return socketResponse?.slide;
+            // }
+
+            // Get option null
+            let option = socketResponse?.option;
+            // If socket message is update slide not update vote option
+            if (option === null || option === undefined) {
+                return pre;
+            }
+
             let newOptionList = pre.optionList;
             let index = newOptionList.findIndex(opt => opt.optionId === option.optionId)
+            // If socket message send for other presentation
+            if (index === -1) {
+                return pre;
+            }
+            // If socket message send for this presentation
             newOptionList[index] = {
                 optionId: option.optionId,
                 optionName: option.optionName,
@@ -42,21 +76,23 @@ function PresentationEdit() {
                 ...pre,
                 optionList: [...newOptionList]
             }
-       })
+        })
     }, [socketResponse])
 
-    const sendMessage = (e) => {
-        console.log("click send mesg")
-        e.preventDefault();
-        sendData({
-            option: {
-                optionId: "demo",
-                optionName: "demo",
-                vote: "demo"
-            }
-        });
 
-    };
+    // const sendMessage = (e) => {
+    //     console.log("click send mesg")
+    //     e.preventDefault();
+    //     sendData({
+    //         option: {
+    //             optionId: "demo",
+    //             optionName: "demo",
+    //             vote: "demo"
+    //         }
+    //     });
+
+    // };
+
     // Call api group information
     async function callApiPresentDetail() {
         const presentId = params.presentId;
@@ -74,11 +110,10 @@ function PresentationEdit() {
             })
 
             setCurrentSlide(newPresentDetail.slideList[0])
-            //setSlideQuestion(newPresentDetail.slideList[0].heading);
-            //setChartData(newPresentDetail.slideList[0].optionList);
         }
         setIsLoading(false)
     }
+
     // Get group info, do some validate
     async function getPresentDetail() {
         const presentId = params.presentId;
@@ -94,17 +129,13 @@ function PresentationEdit() {
         } catch (error) {
             try {
                 await refreshAccessToken();
-                
+
             } catch (error) {
                 navigate("/login")
             }
             await callApiPresentDetail();
         }
     }
-
-    useEffect(() => {
-        getPresentDetail();
-    }, [params.presentId, navigate])
 
     const onSlideQuestionChange = (e) => {
         //setSlideQuestion(e.target.value);
@@ -130,6 +161,7 @@ function PresentationEdit() {
             var newOptionList = [
                 ...prev.optionList,
                 {
+                    optionId: 0,
                     optionName: "Option",
                     vote: 0
                 }]
@@ -171,6 +203,7 @@ function PresentationEdit() {
         setCurrentSlide(prev => {
             var newOptionList = [...prev.optionList]
             newOptionList[index] = {
+                optionId: newOptionList[index].optionId,
                 optionName: e.target.value,
                 vote: newOptionList[index].vote
             }
@@ -228,10 +261,6 @@ function PresentationEdit() {
         }
     }
 
-    const handlePresentSlide = () => {
-
-    }
-
     const callApiDeleteSlide = async (slideId) => {
         let accessToken = localStorage.getItem("access_token");
         const response = await axios.delete(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`, {
@@ -273,6 +302,89 @@ function PresentationEdit() {
         }
     }
 
+
+    const callApiSaveSlide = async () => {
+        let accessToken = localStorage.getItem("access_token");
+        console.log(currentSlide)
+        const response = await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/slides`, {
+            ...currentSlide
+        }, {
+            headers: { 'Authorization': "Bearer " + accessToken }
+        })
+        if (response.status === 200) {
+
+        }
+    }
+
+    const handleSaveSlide = async (e) => {
+        // console.log("currentSlide: ", currentSlide)
+        // sendData({
+        //     message: "send_update",
+        //     slide: currentSlide
+        // });
+        let accessToken = localStorage.getItem("access_token");
+        if (accessToken == null) {
+            navigate("/login");
+        }
+
+        try {
+            e.target.disabled = true;
+            await callApiSaveSlide();
+            e.target.disabled = false;
+        } catch (error) {
+            try {
+                await refreshAccessToken();
+            } catch (error) {
+                navigate("/login")
+            }
+            await callApiSaveSlide();
+        } finally {
+            e.target.disabled = false;
+        }
+    }
+
+
+    const handlePresentSlide = () => {
+        setFullScreenMode(true);
+    }
+
+
+    if (fullScreenMode) {
+        return (
+            <div className="flex flex-col basis-2/4 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh]">
+                <div className="border w-full h-full bg-white">
+                    <div className="mt-8 ml-4 mb-4 text-xl font-bold">{currentSlide?.heading}</div>
+                    {
+                        currentSlide?.optionList.length > 0 &&
+                        <div className="h-[250px]">
+                            <ResponsiveContainer>
+                                <BarChart
+                                    data={currentSlide?.optionList}
+                                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                >
+                                    <XAxis dataKey="optionName" />
+                                    <Bar dataKey="vote" fill="#8884d8">
+                                        <LabelList dataKey="vote" position="top" />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    }
+                </div>
+                <div className="flex justify-end mt-6">
+                    <button
+                        className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                        onClick={() => {
+                            setFullScreenMode(false);
+                        }}>
+                        Stop Present
+                    </button>
+                </div>
+
+            </div>
+        )
+    }
+
     if (isLoading) {
         return (<div className="mx-auto h-[100vh] relative">
             <ReactLoading className="fixed mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={100} width={100} />
@@ -281,17 +393,33 @@ function PresentationEdit() {
 
     return (
         <div className="mb-8 -mx-16">
-            <button className="p-10 border" onClick={(e) => sendMessage(e)}>Send messageType</button>
+            {/* <button className="p-10 border" onClick={(e) => sendMessage(e)}>Send messageType</button> */}
             <div className="font-bold text-2xl mb-8">
                 <span className="bg-[#61dafb] px-4 py-2 rounded-full uppercase mr-2">{presentDetail?.preName[0]}</span>
                 <span className="italic">{presentDetail.preName}</span>
             </div>
             <div className="flex justify-between mb-4">
-                <button onClick={e => handleAddNewSlide(e)} className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50">New Slide</button>
-                <button onClick={handlePresentSlide} className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50">Present</button>
+                <button
+                    onClick={(e) => toast.promise(async () => await handleAddNewSlide(e),
+                        {
+                            pending: 'Adding new slide',
+                            success: 'Adding new slide success 👌',
+                            error: 'Adding new slide failed  🤯'
+                        }, {
+                        className: "mt-10"
+                    })}
+                    className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                >
+                    New Slide
+                </button>
+                <div className="flex">
+                    <button onClick={e => handleSaveSlide(e)} className="rounded mr-4 px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50">Save slide</button>
+                    <button onClick={handlePresentSlide} className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50">Present</button>
+                </div>
+
             </div>
 
-            <div className="flex grow ">
+            <div className="flex grow flex-wrap lg:flex-nowrap">
                 <div className="basis-1/5">
                     <ul>
                         {presentDetail.slideList.length > 0 && presentDetail.slideList.map((slide, index) => {
@@ -321,27 +449,44 @@ function PresentationEdit() {
 
                     </ul>
                 </div>
-                <div className="flex basis-2/4 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh]">
+                <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh]">
                     <div className="border w-full h-full bg-white">
                         <div className="mt-8 ml-4 mb-4 text-xl font-bold">{currentSlide?.heading}</div>
                         {
                             currentSlide?.optionList.length > 0 &&
-                            <BarChart
-                                width={730}
-                                height={250}
-                                data={currentSlide?.optionList}
-                                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                            >
-                                <XAxis dataKey="optionName" />
-                                <Bar dataKey="vote" fill="#8884d8">
-                                    <LabelList dataKey="vote" position="top" />
-                                </Bar>
-                            </BarChart>
+                            <div className="h-[250px]">
+                                <ResponsiveContainer>
+                                    <BarChart
+                                        width={730}
+                                        height={250}
+                                        data={currentSlide?.optionList}
+                                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                    >
+                                        <XAxis dataKey="optionName" />
+                                        <Bar dataKey="vote" fill="#8884d8">
+                                            <LabelList dataKey="vote" position="top" />
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
                         }
 
                     </div>
+                    {currentSlide?.slideId &&
+                        <div className="mt-4 flex ">
+                            <p className="mr-4 self-center font-bold"><span className="italic font-normal">Link Present: </span>{`${process.env.REACT_APP_BASE_URL}/home/slide/vote/${currentSlide.slideId}`}</p>
+                            <button
+                                className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${process.env.REACT_APP_BASE_URL}/home/slide/vote/${currentSlide.slideId}`)
+                                    notifyCopy();
+                                }}>
+                                Copy Link
+                            </button>
+                        </div>
+                    }
                 </div>
-                <div className="flex basis-2/5 flex-col px-4 py-2">
+                <div className="flex basis-1/5 flex-col px-4 py-2">
                     <div className="flex flex-col border-b pb-8">
                         <span className="font-bold"> Slide type</span>
                         <select className="px-4 py-2 mt-2 outline-none">
