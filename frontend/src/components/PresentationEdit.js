@@ -45,6 +45,31 @@ function PresentationEdit() {
         getPresentDetail();
     }, [params.presentId, navigate])
 
+    async function callApiSlideDetail(slideId) {
+        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`)
+
+        if (response.status === 200) {
+            let newSlideDetail = response.data.slide
+            console.log("newslide: ", newSlideDetail)
+            newSlideDetail.optionList.sort((a, b) => a.optionId - b.optionId)
+            setCurrentSlide(newSlideDetail);
+        }
+    }
+
+    // Get group info, do some validate
+    async function getSlideDetail(slideId) {
+
+        if (slideId == null) {
+            return;
+        }
+        try {
+            await callApiSlideDetail(slideId);
+        } catch (error) {
+            await callApiSlideDetail(slideId);
+        }
+    }
+
+
     // When socket resposne change
     useEffect(() => {
         setCurrentSlide(pre => {
@@ -59,7 +84,7 @@ function PresentationEdit() {
                 return pre;
             }
 
-            let newOptionList = pre.optionList;
+            let newOptionList = [...pre.optionList];
             let index = newOptionList.findIndex(opt => opt.optionId === option.optionId)
             // If socket message send for other presentation
             if (index === -1) {
@@ -147,7 +172,7 @@ function PresentationEdit() {
         })
     }
 
-    const handleAddOption = () => {
+    const handleAddOption = (e) => {
         // setChartData(prevState => {
         //     return [
         //         ...prevState,
@@ -214,8 +239,10 @@ function PresentationEdit() {
         })
     }
 
-    const onChangeSlide = (slideIndex) => {
-        setCurrentSlide(presentDetail.slideList[slideIndex])
+    const onChangeSlide = async (slideIndex, slideId) => {
+        const newSlide = await getSlideDetail(slideId);
+        // console.log("new slide in change:", newSlide);
+        // setCurrentSlide(newSlide)
     }
 
     const callApiCreateNewSlide = async () => {
@@ -312,7 +339,7 @@ function PresentationEdit() {
             headers: { 'Authorization': "Bearer " + accessToken }
         })
         if (response.status === 200) {
-
+            await getSlideDetail(currentSlide.slideId)
         }
     }
 
@@ -424,7 +451,7 @@ function PresentationEdit() {
                     <ul>
                         {presentDetail.slideList.length > 0 && presentDetail.slideList.map((slide, index) => {
                             return (
-                                <li className="flex mt-2 flex-col" key={slide.slideId} onClick={() => onChangeSlide(index)}>
+                                <li className="flex mt-2 flex-col" key={slide.slideId} onClick={ (e) =>  onChangeSlide(index, slide?.slideId)}>
 
                                     <div className="flex">
                                         <p>{index + 1}</p>
@@ -507,8 +534,11 @@ function PresentationEdit() {
                                 </div>
                             )
                         })}
-
-                        <button onClick={handleAddOption} className="border bg-gray-200 hover:bg-gray-300 outline-none mt-4 font-bold rounded px-4 py-2">+ Add Option</button>
+                        {
+                            currentSlide?.optionList.length === 10
+                                ? <div></div>
+                                : <button onClick={e => handleAddOption(e)} className="border bg-gray-200 hover:bg-gray-300 outline-none mt-4 font-bold rounded px-4 py-2">+ Add Option</button>
+                        }
                     </div>
                 </div>
             </div>

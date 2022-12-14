@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PreDestroy;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
 import com.corundumstudio.socketio.AckRequest;
@@ -27,12 +28,19 @@ public class SocketIOConfig {
 //	@Autowired
 //	private SocketService socketService;
 	
+	@Value("${frontend.url}")
+	private String frontendUrl;
+	@Value("${backend.url}")
+	private String backendUrl;
+	
 	@Bean
 	public SocketIOServer socketIOServer() {
 		Configuration config = new Configuration();
-		config.setHostname("localhost");
+		System.out.println("backend: "+ backendUrl);
+		System.out.println("frontend: "+ frontendUrl);
+		//config.setHostname("/");
 		config.setPort(8085);
-		config.setOrigin("http://localhost:3000");
+		config.setOrigin(frontendUrl);
 		config.setRandomSession(true);
 		server = new SocketIOServer(config);
 		server.start();
