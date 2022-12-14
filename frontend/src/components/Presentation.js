@@ -46,11 +46,11 @@ function Presentation() {
         } catch (error) {
             try {
                 await refreshAccessToken();
-                await callApiGetListPresent();
-                setIsLoading(false);
             } catch (error) {
                 navigate("/login")
             }
+            await callApiGetListPresent();
+                setIsLoading(false);
         }
     }
     useEffect(() => {

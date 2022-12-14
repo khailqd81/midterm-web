@@ -40,7 +40,7 @@ export const useSocket = (room, username) => {
     useEffect(() => {
         // console.log(`${process.env.REACT_APP_API_ENDPOINT}`)
 
-        const s = io("http://localhost:8085", {
+        const s = io(`${process.env.REACT_APP_API_ENDPOINT_SOCKET}`, {
             reconnection: false,
             query: `username=${username}&room=${room}`, //"room=" + room+",username="+username,
         });
