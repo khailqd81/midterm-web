@@ -1,6 +1,9 @@
 package com.web.midterm.security;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,6 +23,8 @@ import com.web.midterm.filter.CustomAuthorizationFilter;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+	@Value("${frontend.url}")
+	private String frontendUrl;
 	@Autowired
 	private CustomAuthenticationProvider authProvider;
 
@@ -41,6 +46,10 @@ public class SecurityConfig {
 			CorsConfiguration cors = new CorsConfiguration().applyPermitDefaultValues();
 			cors.addAllowedMethod(HttpMethod.DELETE);
 			cors.addAllowedMethod(HttpMethod.PUT);
+			System.out.println("Frontend: " + frontendUrl);
+			cors.addAllowedOrigin(frontendUrl);
+			cors.addAllowedOrigin("http://localhost:3000");
+			//cors.setAllowedOrigins(List.of(frontendUrl, "http://localhost:3000"));
 			return cors;
 		});
 
