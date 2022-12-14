@@ -23,6 +23,7 @@ import com.web.midterm.entity.Option;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.Slide;
 import com.web.midterm.repo.OptionRepository;
+import com.web.midterm.service.OptionService;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
 import com.web.midterm.socketio.SocketService;
@@ -38,6 +39,8 @@ public class SlideController {
 	private PresentationService presentationService;
 	@Autowired
 	private OptionRepository optionRepository;
+	@Autowired
+	private OptionService optionService;
 	@Autowired
 	private SocketIOServer socketIOServer;
 	@Autowired
@@ -99,7 +102,28 @@ public class SlideController {
 				}
 				opt.setSlide(theSlide);
 			}
+			// 
+			List<Option> oldOptionList = theSlide.getOptionList();
+			List<Integer> indexDelete = new ArrayList<>();
+			int count = 0;
+			for (Option option : oldOptionList) {
+				if (!newOptionList.contains(option)) {
+					indexDelete.add(option.getOptionId());
+				} else {
+					count++;
+					System.out.println("contain" + count);
+				}
+			}
+
 			theSlide.setOptionList(newOptionList);
+			if (!indexDelete.isEmpty()) {
+				for (Integer integer : indexDelete) {
+					System.out.println("Delete");
+					Option theOption = optionService.findById(integer);
+					theOption.setSlide(null);
+					optionService.deleteById(integer);
+				}
+			}
 		}
 		theSlide.setHeading(slide.getHeading());
 		slideService.save(theSlide);

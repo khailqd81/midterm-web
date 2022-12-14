@@ -1,14 +1,94 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    BarChart, Bar, LabelList, XAxis
+    BarChart, Bar, LabelList, XAxis, ResponsiveContainer
 } from 'recharts';
 import ReactLoading from "react-loading";
 import axios from "axios";
 import { useSocket } from "./customHook/useSocket";
-
+import * as io from "socket.io-client";
+import { v4 as uuidv4 } from 'uuid';
 function SlidePresent() {
-    const { isConnected, socketResponse, sendData } = useSocket("public", "khai" + Math.random());
+    const { isConnected, socketResponse, sendData } = useSocket("public", "khai" + uuidv4());
+    //
+
+    // const room = "public";
+    // const username = "khai";
+    // const [socket, setSocket] = useState();
+    // const [socketResponse, setSocketResponse] = useState({
+    //     room: "",
+    //     username: "",
+    //     option: "",
+    //     slideId: ""
+    //     // messageType: "",
+    //     // createdDateTime: "",
+    // });
+    // const [isConnected, setIsConnected] = useState(false);
+
+    // const sendData = useCallback(
+    //     (payload) => {
+    //         if (payload.message === "send_update") {
+    //             //console.log(payload.slide)
+    //             socket.emit("send_update", {
+    //                 room: room,
+    //                 username: username,
+    //                 slide: payload.slide
+    //                 //messageType: "CLIENT",
+    //             });
+    //         } else {
+    //             socket.emit("send_vote", {
+    //                 room: room,
+    //                 username: username,
+    //                 option: payload.option,
+    //                 slideId: payload.slideId
+    //                 //messageType: "CLIENT",
+    //             });
+    //         }
+
+    //     },
+    //     [socket, room]
+    // );
+
+    // useEffect(() => {
+    //     // console.log(`${process.env.REACT_APP_API_ENDPOINT}`)
+
+    //     const s = io("http://localhost:8085", {
+    //         reconnection: false,
+    //         query: `username=${username}&room=${room}`, //"room=" + room+",username="+username,
+    //     });
+
+
+    //     s.on("connect", () => {
+    //         console.log("connect from SlidePresent success")
+    //         setIsConnected(true)
+    //     }
+    //     );
+    //     setSocket(s);
+
+    //     s.on("read_message", (res) => {
+    //         console.log("res in slide Present:", res);
+    //         setSocketResponse({
+    //             room: res.room,
+    //             username: res.username,
+    //             slide: res?.slide,
+    //             option: res?.option,
+    //             slideId: res?.slideId
+    //             // content: res.content,
+    //             // messageType: res.messageType,
+    //             // createdDateTime: res.createdDateTime,
+    //         });
+    //     });
+
+    //     return () => {
+    //         console.log("disconnect")
+    //         s.disconnect();
+    //     };
+
+    // }, [room]);
+
+
+    //
+
     const [slideDetail, setSlideDetail] = useState({
         slideId: "",
         heading: "",
@@ -109,52 +189,62 @@ function SlidePresent() {
 
     return (
         <div>
-        <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">KahooClone</h1>
-        <div className="flex justify-between flex-col md:flex-row px-8 py-10 pb-20 mx-4 h-[70vh] ">
-            <div className="basis-1/2 border w-full h-full bg-white shadow-xl rounded-lg">
-                <div className="mt-8 ml-4 mb-4 text-xl font-bold">{slideDetail?.heading}</div>
-                {
-                    slideDetail?.optionList.length > 0 &&
-                    <BarChart
-                        width={730}
-                        height={250}
-                        data={slideDetail?.optionList}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                    >
-                        <XAxis dataKey="optionName" />
-                        <Bar dataKey="vote" fill="#8884d8">
-                            <LabelList dataKey="vote" position="top" />
-                        </Bar>
-                    </BarChart>
-                }
+            <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">KahooClone</h1>
+            <div className="flex justify-between flex-wrap flex-row md:px-8 md:py-10 md:pb-20 md:mx-4 p-2 h-[90vh]">
+                <div className="basis-full md:basis-1/2 border w-full h-full bg-white shadow-xl rounded-lg">
+                    <div className="mt-4 ml-4 mb-4 text-xl font-bold">{slideDetail?.heading}</div>
+                    {
+                        slideDetail?.optionList.length > 0 &&
+                        <div className="h-[400px]">
+                            <ResponsiveContainer>
+                                <BarChart
+                                    data={slideDetail?.optionList}
+                                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                >
+                                    <XAxis dataKey="optionName" />
+                                    <Bar dataKey="vote" fill="#8884d8">
+                                        <LabelList dataKey="vote" position="top" />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    }
 
+                </div>
+                <form className="mt-4 md:mt-0 basis-full bg-white shadow-xl rounded-lg md:basis-2/5 h-full px-8 py-4" onSubmit={(e) => handleSubmitForm(e)}>
+                    <div className="font-bold text-xl mb-4">Select option:</div>
+                    <div className="overflow-y-auto max-h-[75%] shadow-2xl px-4 py-2">
+                        {slideDetail?.optionList.length > 0 ?
+                            slideDetail?.optionList.map(opt => {
+                                return (
+                                    <div
+                                        className={opt.optionName === answer.optionName && opt.optionId === answer.optionId
+                                            ? "flex border border-sky-400 border-2 rounded-lg my-2 pl-2 bg-white"
+                                            : "flex border hover:border-sky-400 border-2 shadow rounded-lg my-2 pl-2 bg-white"
+                                        }
+                                    >
+                                        <input
+                                            className="outline-none"
+                                            id={opt.optionId}
+                                            name="option"
+                                            type="radio"
+                                            value={opt.optionName}
+                                            onChange={e => onInputChange(e, opt.optionId)}
+                                            checked={opt.optionName === answer.optionName && opt.optionId === answer.optionId}
+                                        />
+                                        <label className="grow py-2 self-center ml-2 cursor-pointer" htmlFor={opt.optionId}>{opt.optionName}</label>
+                                    </div>
+                                )
+                            })
+
+                            :
+                            <div></div>
+                        }
+                    </div>
+
+                    <button className="mt-4 rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50" type="submit">Submit</button>
+                </form>
             </div>
-            <form className="bg-white h-full shadow-xl rounded-lg px-8 py-4" onSubmit={(e) => handleSubmitForm(e)}>
-                <div className="font-bold text-xl">Select option:</div>
-                {slideDetail?.optionList.length > 0 ?
-                    slideDetail?.optionList.map(opt => {
-                        return (
-                            <div className="border">
-                                <input
-                                    id={opt.optionId}
-                                    name="option"
-                                    type="radio"
-                                    value={opt.optionName}
-                                    onChange={e => onInputChange(e, opt.optionId)}
-                                    checked={opt.optionName === answer.optionName && opt.optionId === answer.optionId}
-
-                                />
-                                <label htmlFor={opt.optionId}>{opt.optionName}</label>
-                            </div>
-                        )
-                    })
-                    :
-                    <div></div>
-                }
-
-                <button type="submit">Submit</button>
-            </form>
-        </div>
         </div>
     )
 }

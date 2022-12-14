@@ -73,10 +73,12 @@ public class SocketService {
 		optDb.setVote(optDb.getVote() + 1);
 		optionRepository.save(optDb);
 		message.setOption(optDb);
+//		senderClient.getNamespace().getBroadcastOperations().sendEvent("read_message", message);
 		for (SocketIOClient client : senderClient.getNamespace().getRoomOperations(room).getClients()) {
 //			if (!client.getSessionId().equals(senderClient.getSessionId())) {
 //				client.sendEvent("read_message", message);
 //			}
+			System.out.println("send message");
 			client.sendEvent("read_message", message);
 		}
 	}

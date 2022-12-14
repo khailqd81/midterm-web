@@ -33,6 +33,7 @@ public class SocketIOConfig {
 		config.setHostname("localhost");
 		config.setPort(8085);
 		config.setOrigin("http://localhost:3000");
+		config.setRandomSession(true);
 		server = new SocketIOServer(config);
 		server.start();
 		
@@ -43,8 +44,13 @@ public class SocketIOConfig {
 	            Map<String, List<String>> params = client.getHandshakeData().getUrlParams();
 	            String room = params.get("room").stream().collect(Collectors.joining());
 	            String username = params.get("username").stream().collect(Collectors.joining());
-	            System.out.println("room" + room);
-	            System.out.println("username" + username);
+	            System.out.println("room: " + room);
+	            System.out.println("username: " + username);
+	            
+	            SocketIOClient oldClient = client.getNamespace().getClient(client.getSessionId());
+	            if (oldClient != null) {
+	            	System.out.println("Connected before");
+	            }
 	            client.joinRoom(room);
 			}
 		});

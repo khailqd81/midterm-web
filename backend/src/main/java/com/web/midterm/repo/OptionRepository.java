@@ -6,4 +6,5 @@ import com.web.midterm.entity.Option;
 
 public interface OptionRepository extends JpaRepository<Option, Integer> {
 	public Option findById(int optionId);
+	public void deleteByOptionId(int optionId);
 }

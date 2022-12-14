@@ -21,23 +21,24 @@ import lombok.ToString;
 @Entity
 @Getter
 @Setter
-@RequiredArgsConstructor 
+@RequiredArgsConstructor
 @ToString
 public class Option {
-	
+
 	@Id
-	@Column(name="option_id")
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name = "option_id")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int optionId;
-	
-	@ManyToOne(fetch = FetchType.LAZY,cascade = {CascadeType.MERGE, CascadeType.DETACH, CascadeType.REFRESH})
-	@JoinColumn(name="slide_id")
+
+	@ManyToOne(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE, 
+			CascadeType.DETACH, CascadeType.REFRESH })
+	@JoinColumn(name = "slide_id")
 	@JsonIgnore
 	private Slide slide;
-	
-	@Column(name="option_name")
+
+	@Column(name = "option_name")
 	private String optionName;
-	
-	@Column(name="vote")
+
+	@Column(name = "vote")
 	private int vote;
 }
