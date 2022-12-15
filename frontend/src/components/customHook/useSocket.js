@@ -43,6 +43,7 @@ export const useSocket = (room, username) => {
         const s = io(`${process.env.REACT_APP_API_ENDPOINT_SOCKET}`, {
             reconnection: false,
             query: `username=${username}&room=${room}`, //"room=" + room+",username="+username,
+            withCredentials: false
         });
 
 
