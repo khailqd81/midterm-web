@@ -41,7 +41,7 @@ public class SocketIOConfig {
 		System.out.println("frontend: "+ frontendUrl);
 
 		config.setHostname("0.0.0.0");
-		config.setPort(8085);
+		config.setPort(443);
 		config.setOrigin(frontendUrl);
 		config.setRandomSession(true);
 		server = new SocketIOServer(config);
