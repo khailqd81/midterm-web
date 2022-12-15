@@ -1,5 +1,6 @@
 package com.web.midterm.security;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,9 +48,11 @@ public class SecurityConfig {
 			cors.addAllowedMethod(HttpMethod.DELETE);
 			cors.addAllowedMethod(HttpMethod.PUT);
 			System.out.println("Frontend: " + frontendUrl);
-			cors.addAllowedOrigin("*");
-			cors.addAllowedOrigin(frontendUrl);
-			cors.addAllowedOrigin("http://localhost:3000");
+//			cors.addAllowedOrigin("*");
+//			cors.addAllowedOrigin(frontendUrl);
+//			cors.addAllowedOrigin("http://localhost:3000");
+			cors.setAllowCredentials(true);
+			cors.setAllowedOrigins(Arrays.asList(frontendUrl,"http://localhost:3000"));
 			//cors.setAllowedOrigins(List.of(frontendUrl, "http://localhost:3000"));
 			return cors;
 		});
