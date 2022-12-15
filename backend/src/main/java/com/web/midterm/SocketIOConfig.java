@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.Configuration;
+import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
@@ -38,7 +39,8 @@ public class SocketIOConfig {
 		Configuration config = new Configuration();
 		System.out.println("backend: "+ backendUrl);
 		System.out.println("frontend: "+ frontendUrl);
-		//config.setHostname("/");
+
+		config.setHostname("0.0.0.0");
 		config.setPort(8085);
 		config.setOrigin(frontendUrl);
 		config.setRandomSession(true);

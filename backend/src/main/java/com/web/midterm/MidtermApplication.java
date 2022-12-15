@@ -3,13 +3,15 @@ package com.web.midterm;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import com.web.midterm.utils.JWTHandler;
+import com.corundumstudio.socketio.SocketIOServer;
 
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
@@ -27,7 +29,9 @@ import springfox.documentation.spring.web.plugins.Docket;
 public class MidtermApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MidtermApplication.class, args);
+		ConfigurableApplicationContext context = SpringApplication.run(MidtermApplication.class, args);
+//		SocketIOServer beanSocket = context.getBean(SocketIOServer.class);
+//		beanSocket.start();
 	}
 	 
 	@Bean
