@@ -7,7 +7,7 @@ export const useSocket = (room, username) => {
         room: "",
         username: "",
         option: "",
-        slideId: ""
+        slideId: "",
         // messageType: "",
         // createdDateTime: "",
     });
@@ -20,7 +20,7 @@ export const useSocket = (room, username) => {
                 socket.emit("send_update", {
                     room: room,
                     username: username,
-                    slide: payload.slide
+                    slide: payload.slide,
                     //messageType: "CLIENT",
                 });
             } else {
@@ -28,11 +28,10 @@ export const useSocket = (room, username) => {
                     room: room,
                     username: username,
                     option: payload.option,
-                    slideId: payload.slideId
+                    slideId: payload.slideId,
                     //messageType: "CLIENT",
                 });
             }
-
         },
         [socket, room]
     );
@@ -43,17 +42,14 @@ export const useSocket = (room, username) => {
         const s = io(`${process.env.REACT_APP_API_ENDPOINT_SOCKET}`, {
             reconnection: false,
             query: `username=${username}&room=${room}`, //"room=" + room+",username="+username,
-            withCredentials: false
+            withCredentials: false,
         });
 
-
         s.on("connect", () => {
-            console.log("connect success")
-            setIsConnected(true)
-        }
-        );
-       setSocket(s);
-
+            console.log("connect success");
+            setIsConnected(true);
+        });
+        setSocket(s);
 
         s.on("read_message", (res) => {
             console.log("res:", res);
@@ -62,7 +58,7 @@ export const useSocket = (room, username) => {
                 username: res.username,
                 slide: res?.slide,
                 option: res?.option,
-                slideId: res?.slideId
+                slideId: res?.slideId,
                 // content: res.content,
                 // messageType: res.messageType,
                 // createdDateTime: res.createdDateTime,
@@ -70,10 +66,9 @@ export const useSocket = (room, username) => {
         });
 
         return () => {
-            console.log("disconnect")
+            console.log("disconnect");
             s.disconnect();
         };
-
     }, [room]);
     return { socketResponse, isConnected, sendData };
 };

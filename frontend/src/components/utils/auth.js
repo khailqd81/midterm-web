@@ -23,20 +23,24 @@ import axios from "axios";
 // }
 
 const refreshAccessToken = async () => {
-
     const refreshToken = localStorage.getItem("refresh_token");
-    try {
-        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user/refreshToken`, {
-            headers: { 'Authorization': refreshToken }
-        })
+    // try {
 
-        if (response.status === 200) {
-            localStorage.setItem("access_token", response.data.access_token);
+    //     return true;
+    // } catch (error) {
+    //     return false;
+    // }
+
+    const response = await axios.get(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/user/refreshToken`,
+        {
+            headers: { Authorization: refreshToken },
         }
-        return true;
-    } catch (error) {
-        return false;
+    );
+
+    if (response.status === 200) {
+        localStorage.setItem("access_token", response.data.access_token);
     }
-}
+};
 
 export { refreshAccessToken };

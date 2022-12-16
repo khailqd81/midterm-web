@@ -2,8 +2,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link, Navigate, Outlet, useNavigate } from "react-router-dom";
 import ReactLoading from "react-loading";
-import { refreshAccessToken } from "./utils/auth"
-import { ToastContainer } from 'react-toastify';
+import { refreshAccessToken } from "../utils/auth";
+import { ToastContainer } from "react-toastify";
 function ProtectedRoutes() {
     const navigate = useNavigate();
     const [isAuth, setIsAuth] = useState(false);
@@ -16,9 +16,16 @@ function ProtectedRoutes() {
                 return;
             }
             try {
-                const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/user/isauth`, {
-                    headers: { 'Authorization': "Bearer " + localStorage.getItem("access_token") }
-                })
+                const response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/user/isauth`,
+                    {
+                        headers: {
+                            Authorization:
+                                "Bearer " +
+                                localStorage.getItem("access_token"),
+                        },
+                    }
+                );
                 if (response.status === 200) {
                     setIsAuth(true);
                     localStorage.setItem("userId", response.data?.userId);
@@ -36,12 +43,20 @@ function ProtectedRoutes() {
             }
         }
         checkAuth();
-    }, [])
+    }, []);
 
     if (isLoading) {
-        return (<div className="mx-auto h-[100vh] relative">
-            <ReactLoading className="absolute mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2" type="spin" color="#7483bd" height={100} width={100} />
-        </div>)
+        return (
+            <div className="mx-auto h-[100vh] relative">
+                <ReactLoading
+                    className="absolute mx-auto top-[50%] left-[50%] -translate-x-2/4 -translate-y-1/2"
+                    type="spin"
+                    color="#7483bd"
+                    height={100}
+                    width={100}
+                />
+            </div>
+        );
     }
     const handleLogout = () => {
         if (localStorage.getItem("access_token") != null) {
@@ -52,32 +67,53 @@ function ProtectedRoutes() {
             localStorage.removeItem("email");
             localStorage.removeItem("userId");
         }
-        navigate("/login")
-    }
+        navigate("/login");
+    };
 
-    return (isAuth
-        ?
+    return isAuth ? (
         <>
             <header className="flex justify-between px-20 py-4 bg-[#333] ml-0">
                 <ul className="flex text-white m-0 p-0">
                     <li className="mr-4">
-                        <Link to="/home" className="no-underline text-[#61dafb]">KahooPaTiKa</Link>
+                        <Link
+                            to="/home"
+                            className="no-underline text-[#61dafb]"
+                        >
+                            KahooPaTiKa
+                        </Link>
                     </li>
                     <li className="mr-4">
-                        <Link to="/home" className="no-underline text-white hover:text-[#61dafb]">Home</Link>
+                        <Link
+                            to="/home"
+                            className="no-underline text-white hover:text-[#61dafb]"
+                        >
+                            Home
+                        </Link>
                     </li>
                     <li className="mr-4">
-                        <Link to="/home/presentation" className="no-underline text-white hover:text-[#61dafb]">Presentation</Link>
+                        <Link
+                            to="/home/presentation"
+                            className="no-underline text-white hover:text-[#61dafb]"
+                        >
+                            Presentation
+                        </Link>
                     </li>
                 </ul>
                 <ul className="flex text-white m-0 p-0">
                     <li className="mr-4">
-                        <Link to="/home/profile" className="no-underline text-white hover:text-[#61dafb]">
+                        <Link
+                            to="/home/profile"
+                            className="no-underline text-white hover:text-[#61dafb]"
+                        >
                             Hello {localStorage.getItem("firstName")}
                         </Link>
-
                     </li>
-                    <li className="cursor-pointer text-white hover:text-[#61dafb]" onClick={handleLogout}>Logout</li>
+                    <li
+                        className="cursor-pointer text-white hover:text-[#61dafb]"
+                        onClick={handleLogout}
+                    >
+                        Logout
+                    </li>
                 </ul>
             </header>
             <div className="py-8 px-20 min-h-[calc(100vh-112px)]">
@@ -98,10 +134,14 @@ function ProtectedRoutes() {
                 <Outlet />
             </div>
             <footer className="flex justify-center px-20 py-4 bg-[#333] text-white">
-                <p className="m-0">Copyright@HCMUS-19120250 Phạm Tiến Khải 2022</p>
+                <p className="m-0">
+                    Copyright@HCMUS-19120250 Phạm Tiến Khải 2022
+                </p>
             </footer>
         </>
-        : <Navigate to="/login" />);
+    ) : (
+        <Navigate to="/login" />
+    );
 }
 
-export default ProtectedRoutes
+export default ProtectedRoutes;

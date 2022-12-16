@@ -6,20 +6,15 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PreDestroy;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
-import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
-import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
-import com.web.midterm.socketio.SocketService;
-import com.web.midterm.socketio.SocketVoteMessage;
 
 @org.springframework.context.annotation.Configuration
 public class SocketIOConfig {
@@ -33,17 +28,19 @@ public class SocketIOConfig {
 	private String frontendUrl;
 	@Value("${backend.url}")
 	private String backendUrl;
-	
+	@Value("${socket.server.port}")
+	private int port;
+
 	@Bean
 	public SocketIOServer socketIOServer() {
 		Configuration config = new Configuration();
-		System.out.println("backend: "+ backendUrl);
-		System.out.println("frontend: "+ frontendUrl);
-
 		config.setHostname("0.0.0.0");
-		config.setPort(443);
+		config.setPort(port);
 		config.setOrigin(frontendUrl);
 		config.setRandomSession(true);
+		SocketConfig co = new SocketConfig();
+		co.setReuseAddress(true);
+		config.setSocketConfig(co);
 		server = new SocketIOServer(config);
 		server.start();
 		
