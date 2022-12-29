@@ -42,7 +42,7 @@ public class SocketIOConfig {
 		co.setReuseAddress(true);
 		config.setSocketConfig(co);
 		server = new SocketIOServer(config);
-		server.start();
+		//server.start();
 		
 		server.addConnectListener(new ConnectListener() {
 			@Override

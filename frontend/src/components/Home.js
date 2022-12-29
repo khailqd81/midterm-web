@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiUserGroup } from "react-icons/hi";
 import { AiOutlineUsergroupAdd } from "react-icons/ai";
-import { BsFillCalendarCheckFill } from "react-icons/bs";
+import { BsFillCalendarCheckFill, BsFillTrashFill } from "react-icons/bs";
 import { refreshAccessToken } from "./utils/auth";
 import ReactLoading from "react-loading";
 import { toast } from "react-toastify";
@@ -131,6 +131,48 @@ function Home() {
         // console.log(groupId);
     };
 
+    const callApiDeleteGroup = async (groupId) => {
+        let accessToken = localStorage.getItem("access_token");
+        const response = await axios.delete(
+            `${process.env.REACT_APP_API_ENDPOINT}/api/groups/${groupId}`,
+            {
+                headers: {
+                    Authorization: "Bearer " + accessToken,
+                },
+            }
+        );
+        if (response.status === 200) {
+            setOwnerGroup((prev) => {
+                var newOwnerGroupList = prev.filter(
+                    (p) => p.groupId !== groupId
+                );
+                return [...newOwnerGroupList];
+            });
+        }
+    };
+
+    const handleDeleteGroup = async (e, groupId) => {
+        let accessToken = localStorage.getItem("access_token");
+        if (accessToken == null) {
+            navigate("/login");
+        }
+
+        try {
+            e.target.disabled = true;
+            await callApiDeleteGroup(groupId);
+            e.target.disabled = false;
+        } catch (error) {
+            try {
+                await refreshAccessToken();
+            } catch (error2) {
+                navigate("/login");
+            }
+            await callApiDeleteGroup(groupId);
+        } finally {
+            e.target.disabled = false;
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="mx-auto h-[100vh] relative">
@@ -205,29 +247,58 @@ function Home() {
                         ownerGroup.map((g) => {
                             return (
                                 <li
-                                    className="first:mt-4 border-b flex justify-between px-4 py-4 cursor-pointer hover:bg-slate-200 first:border-t"
+                                    className="first:mt-4 border-b flex justify-between cursor-pointer  first:border-t"
                                     key={g.groupId}
-                                    onClick={() =>
-                                        handleGetListMember(g.groupId)
-                                    }
                                 >
-                                    <div>
-                                        <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">
-                                            {g.groupName[0]}
-                                        </span>
-                                        {g.groupName}
+                                    <div
+                                        className="flex justify-between px-4 py-4 cursor-pointer grow hover:bg-slate-200"
+                                        onClick={() =>
+                                            handleGetListMember(g.groupId)
+                                        }
+                                    >
+                                        <div>
+                                            <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">
+                                                {g.groupName[0]}
+                                            </span>
+                                            {g.groupName}
+                                        </div>
+                                        <div className="flex">
+                                            <BsFillCalendarCheckFill
+                                                className="self-center mr-2"
+                                                size={20}
+                                            />
+                                            <span className="italic self-center mr-2">
+                                                Created at:
+                                            </span>{" "}
+                                            {new Date(g.createdAt)
+                                                .toString()
+                                                .slice(0, 24)}
+                                        </div>
                                     </div>
                                     <div className="flex">
-                                        <BsFillCalendarCheckFill
-                                            className="self-center mr-2"
+                                        <BsFillTrashFill
+                                            onClick={(e) =>
+                                                toast.promise(
+                                                    handleDeleteGroup(
+                                                        e,
+                                                        g.groupId
+                                                    ),
+                                                    {
+                                                        pending: "Delete Group",
+                                                        success:
+                                                            "Delete Group success 👌",
+                                                        error: "Delete Group failed  🤯",
+                                                    },
+                                                    {
+                                                        style: {
+                                                            marginTop: "50px",
+                                                        },
+                                                    }
+                                                )
+                                            }
+                                            className="self-center ml-4 hover:opacity-50"
                                             size={20}
                                         />
-                                        <span className="italic self-center mr-2">
-                                            Created at:
-                                        </span>{" "}
-                                        {new Date(g.createdAt)
-                                            .toString()
-                                            .slice(0, 24)}
                                     </div>
                                 </li>
                             );

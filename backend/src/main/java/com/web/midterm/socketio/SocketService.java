@@ -3,7 +3,6 @@ package com.web.midterm.socketio;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,9 +15,7 @@ import com.web.midterm.entity.Option;
 import com.web.midterm.entity.Slide;
 import com.web.midterm.repo.OptionRepository;
 import com.web.midterm.repo.SlideRepository;
-import com.web.midterm.service.SlideService;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
 public class SocketService {

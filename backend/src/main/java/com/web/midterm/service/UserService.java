@@ -11,6 +11,7 @@ public interface UserService {
 	public void save(UserDto user);
 	public void save(SocialUserDto user);
 	public void save(User user);
+	public User getCurrentAuthUser();
 	public User findByEmail(String email);
 	public User findByUserId(int id);
 	public List<Group> getGroups(int userId);

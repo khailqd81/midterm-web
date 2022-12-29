@@ -10,7 +10,9 @@ import java.util.UUID;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -118,6 +120,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	@Override
 	public void save(User user) {
 		userRepository.save(user);
+	}
+
+	@Override
+	public User getCurrentAuthUser() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userRepository.findByEmail(currentPrincipalName);
+		return user;
 	}
 
 }

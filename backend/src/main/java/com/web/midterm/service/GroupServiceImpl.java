@@ -25,6 +25,8 @@ import com.web.midterm.repo.UserRepository;
 @Service
 public class GroupServiceImpl implements GroupService {
 	@Autowired
+	private UserService userService;
+	@Autowired
 	private GroupRepository groupRepository;
 	@Autowired
 	private UserRepository userRepository;
@@ -138,6 +140,24 @@ public class GroupServiceImpl implements GroupService {
 	@Transactional
 	public void deleteMember(int userId, int groupId) {
 		userGroupRepository.deleteByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
+	}
+
+	@Override
+	public void delete(int groupId) throws Exception {
+		// Check exists group
+		Group g = groupRepository.findByGroupId(groupId);
+		if (g == null ) {
+			throw new Exception("Group Id not found");
+		}
+		
+		// Check authorization to delete
+		User currentUser = userService.getCurrentAuthUser();
+		if (currentUser.getUserId() != g.getUser().getUserId()) {
+			throw new Exception("You don't have permission to delete group " + groupId);
+		}
+		
+		g.setDeleted(true);
+		groupRepository.save(g);
 	}
 	
 	

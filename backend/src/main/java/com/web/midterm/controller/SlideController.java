@@ -45,6 +45,7 @@ public class SlideController {
 	private SocketIOServer socketIOServer;
 	@Autowired
 	private SocketService socketService;
+
 	@PostMapping
 	public ResponseEntity<?> createSlide(@RequestBody Map<String, String> payload) throws Exception {
 		Slide s = new Slide();
@@ -53,9 +54,12 @@ public class SlideController {
 
 		if (typeName.equals("multiple")) {
 			s.setHeading("Multiple Choice");
+		} else if (typeName.equals("paragraph")) {
+			s.setHeading("Paragraph");
 		} else {
 			s.setHeading("Heading");
 		}
+		
 		s.setTypeName(typeName);
 		Presentation p = presentationService.findById(Integer.parseInt(presentId));
 		if (p == null) {
@@ -102,7 +106,7 @@ public class SlideController {
 				}
 				opt.setSlide(theSlide);
 			}
-			// 
+			//
 			List<Option> oldOptionList = theSlide.getOptionList();
 			List<Integer> indexDelete = new ArrayList<>();
 			int count = 0;
@@ -127,7 +131,7 @@ public class SlideController {
 		}
 		theSlide.setHeading(slide.getHeading());
 		slideService.save(theSlide);
-		
+
 		// Handle send update slide to client through socket
 		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
 		SocketUpdateMessage socketMessage = new SocketUpdateMessage();
@@ -140,25 +144,25 @@ public class SlideController {
 		return ResponseEntity.ok(message);
 	}
 
-	@PostMapping("/{slideId}")
-	public ResponseEntity<?> updateOptionList(@PathVariable int slideId, @RequestBody Option opt) throws Exception {
-		Slide s = slideService.findById(slideId);
-		if (s == null) {
-			throw new Exception("Slide Id not found");
-		}
-		System.out.println("Option: " + opt);
-		Option optDb = optionRepository.findById(opt.getOptionId());
-		if (optDb == null ) {
-			throw new Exception("Option Id not found");
-		}
-		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
-		optDb.setVote(optDb.getVote() + 1);
-		optionRepository.save(optDb);
-		this.sendSocketMessage(clients, optDb);
-		Map<String, String> message = new HashMap<>();
-		message.put("message", "Update slide success");
-		return ResponseEntity.ok(message);
-	}
+//	@PostMapping("/{slideId}")
+//	public ResponseEntity<?> updateOptionList(@PathVariable int slideId, @RequestBody Option opt) throws Exception {
+//		Slide s = slideService.findById(slideId);
+//		if (s == null) {
+//			throw new Exception("Slide Id not found");
+//		}
+//		System.out.println("Option: " + opt);
+//		Option optDb = optionRepository.findById(opt.getOptionId());
+//		if (optDb == null ) {
+//			throw new Exception("Option Id not found");
+//		}
+//		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
+//		optDb.setVote(optDb.getVote() + 1);
+//		optionRepository.save(optDb);
+//		this.sendSocketMessage(clients, optDb);
+//		Map<String, String> message = new HashMap<>();
+//		message.put("message", "Update slide success");
+//		return ResponseEntity.ok(message);
+//	}
 
 	@DeleteMapping("/{slideId}")
 	public ResponseEntity<?> deleteSlide(@PathVariable int slideId) throws Exception {
@@ -186,18 +190,28 @@ public class SlideController {
 //	}
 
 	@GetMapping("/{slideId}")
-	public ResponseEntity<?> getPresentationDetail(@PathVariable int slideId) {
+	public ResponseEntity<?> getPresentationDetail(@PathVariable int slideId) throws Exception {
 		// Get user from access token
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //		String currentPrincipalName = authentication.getName();
 //		User user = userService.findByEmail(currentPrincipalName);
 
 		Slide slide = slideService.findById(slideId);
+		if (slide == null) {
+			throw new Exception("Slid id not found");
+		}
+		Presentation presentation = slide.getPresentation();
+		presentation.setCurrentSlide(slide);
+		presentationService.save(presentation);
+		
+		// Call socket server
+		//
+		
 		Map<String, Slide> message = new HashMap<>();
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);
 	}
-	
+
 	@GetMapping("/vote/{slideId}")
 	public ResponseEntity<?> getPresentationDetailVote(@PathVariable int slideId) {
 		// Get user from access token
@@ -210,7 +224,7 @@ public class SlideController {
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);
 	}
-	
+
 	public static void sendSocketMessage(Collection<SocketIOClient> clients, Option message) {
 		for (SocketIOClient client : clients) {
 			client.sendEvent("read_message", message);

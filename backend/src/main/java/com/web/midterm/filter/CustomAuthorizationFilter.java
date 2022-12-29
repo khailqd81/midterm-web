@@ -33,12 +33,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
+		System.out.println(request.getServletPath());
 		if (request.getServletPath().equals("/api/login") 
 				|| request.getServletPath().equals("/api/user/register")
 				|| request.getServletPath().equals("/api/user/oauth2")
 				|| request.getServletPath().equals("/api/user/confirm")
 				|| request.getServletPath().equals("/api/user/refreshToken")
-				|| request.getServletPath().contains("/api/slides/vote")) {
+				|| request.getServletPath().contains("/api/presents/vote")) {
 			filterChain.doFilter(request, response);
 		} else {
 			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -75,7 +76,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 					new ObjectMapper().writeValue(response.getOutputStream(), error);
 				}
 			} else {
-				filterChain.doFilter(request, response);
+				//filterChain.doFilter(request, response);
+				throw new IOException("Access token is missing or invalid");
 			}
 		}
 	}

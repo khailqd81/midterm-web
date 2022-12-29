@@ -17,7 +17,14 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 @Entity
+@Getter
+@Setter
+@ToString
 @Table(name = "group", schema="public")
 public class Group {
 
@@ -38,68 +45,15 @@ public class Group {
 
 	@Column(name = "created_at")
 	private Date createdAt;
+	
+	@Column(name = "is_deleted")
+	private boolean isDeleted;
 
 	@OneToMany(mappedBy = "primaryKey.group", cascade = CascadeType.ALL)
 	@JsonIgnore
 	private List<UserGroup> userGroup = new ArrayList<>();
-
-	public Group() {
-
-	}
-
-	public Group(String groupName, User user, String groupLink, Date createdAt) {
-		this.groupName = groupName;
-		this.user = user;
-		this.groupLink = groupLink;
-		this.createdAt = createdAt;
-	}
-
-	public int getGroupId() {
-		return groupId;
-	}
-
-	public void setGroupId(int groupId) {
-		this.groupId = groupId;
-	}
-
-	public String getGroupName() {
-		return groupName;
-	}
-
-	public void setGroupName(String groupName) {
-		this.groupName = groupName;
-	}
-
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
-	}
-
-	public String getGroupLink() {
-		return groupLink;
-	}
-
-	public void setGroupLink(String groupLink) {
-		this.groupLink = groupLink;
-	}
-
-	public Date getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public List<UserGroup> getUserGroup() {
-		return userGroup;
-	}
-
-	public void setUserGroup(List<UserGroup> userGroup) {
-		this.userGroup = userGroup;
-	}
+	
+	@OneToOne(mappedBy = "group")
+	private Presentation present;
 	
 }

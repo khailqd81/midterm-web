@@ -1,9 +1,6 @@
 package com.web.midterm.controller;
 
 import java.net.URI;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -14,9 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -47,7 +41,6 @@ import com.web.midterm.service.UserService;
 import com.web.midterm.service.VerifytokenService;
 import com.web.midterm.utils.JWTHandler;
 
-import lombok.Data;
 
 @RestController
 @RequestMapping("/api/user")

@@ -15,9 +15,9 @@ function PresentationEdit() {
     const [isLoading, setIsLoading] = useState(true);
     const [fullScreenMode, setFullScreenMode] = useState(false);
     const [presentDetail, setPresentDetail] = useState({
-        preId: "",
+        presentId: "",
         createdAt: "",
-        preName: "",
+        presentName: "",
         slideList: [],
     });
     const [currentSlide, setCurrentSlide] = useState({
@@ -47,8 +47,12 @@ function PresentationEdit() {
     }, [params.presentId, navigate]);
 
     async function callApiSlideDetail(slideId) {
+        const accessToken = localStorage.getItem("access_token");
         const response = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`
+            `${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`,
+            {
+                headers: { Authorization: "Bearer " + accessToken },
+            }
         );
 
         if (response.status === 200) {
@@ -68,6 +72,49 @@ function PresentationEdit() {
             await callApiSlideDetail(slideId);
         } catch (error) {
             await callApiSlideDetail(slideId);
+        }
+    }
+
+    async function callApiGetColist(presentId) {
+        const accessToken = localStorage.getItem("access_token");
+        const response = await axios.get(
+            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}/coList`,
+            {
+                headers: { Authorization: "Bearer " + accessToken },
+            }
+        );
+    }
+
+    // Get group info, do some validate
+    async function getColist() {
+        const currentPresentId = presentDetail.presentId;
+        if (currentPresentId == null) {
+            return;
+        }
+        try {
+            await callApiGetColist(currentPresentId);
+        } catch (error) {
+            await callApiGetColist(currentPresentId);
+        }
+    }
+
+    // Update current slide of the presentation
+    async function updateCurrentSlide(slideId) {
+        if (slideId == null) {
+            return;
+        }
+        try {
+            const presentId = params.presentId;
+            const accessToken = localStorage.getItem("access_token");
+            await axios.post(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}/${slideId}`,
+                {},
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
+            );
+        } catch (error) {
+            console.log(error);
         }
     }
 
@@ -140,8 +187,10 @@ function PresentationEdit() {
             setPresentDetail({
                 ...newPresentDetail,
             });
-
-            setCurrentSlide(newPresentDetail.slideList[0]);
+            newPresentDetail.currentSlide.optionList.sort(
+                (a, b) => a.optionId - b.optionId
+            );
+            setCurrentSlide(newPresentDetail.currentSlide);
         }
         setIsLoading(false);
     }
@@ -248,6 +297,7 @@ function PresentationEdit() {
 
     const onChangeSlide = async (slideIndex, slideId) => {
         await getSlideDetail(slideId);
+        await updateCurrentSlide(slideId);
         // console.log("new slide in change:", newSlide);
         // setCurrentSlide(newSlide)
     };
@@ -257,7 +307,7 @@ function PresentationEdit() {
         const response = await axios.post(
             `${process.env.REACT_APP_API_ENDPOINT}/api/slides`,
             {
-                preId: presentDetail.preId,
+                presentId: presentDetail.presentId,
                 typeName: "multiple",
             },
             {
@@ -437,6 +487,10 @@ function PresentationEdit() {
         );
     }
 
+    const handleGetCollaborator = async () => {
+        await getColist();
+    };
+
     if (isLoading) {
         return (
             <div className="mx-auto h-[100vh] relative">
@@ -456,9 +510,9 @@ function PresentationEdit() {
             {/* <button className="p-10 border" onClick={(e) => sendMessage(e)}>Send messageType</button> */}
             <div className="font-bold text-2xl mb-8">
                 <span className="bg-[#61dafb] px-4 py-2 rounded-full uppercase mr-2">
-                    {presentDetail?.preName[0]}
+                    {presentDetail?.presentName[0]}
                 </span>
-                <span className="italic">{presentDetail.preName}</span>
+                <span className="italic">{presentDetail.presentName}</span>
             </div>
             <div className="flex justify-between mb-4">
                 <button
@@ -485,6 +539,12 @@ function PresentationEdit() {
                         className="rounded mr-4 px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
                     >
                         Save slide
+                    </button>
+                    <button
+                        onClick={handleGetCollaborator}
+                        className="rounded mr-4 px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                    >
+                        Collaborator
                     </button>
                     <button
                         onClick={handlePresentSlide}
@@ -580,13 +640,13 @@ function PresentationEdit() {
                                 <span className="italic font-normal">
                                     Link Present:{" "}
                                 </span>
-                                {`${process.env.REACT_APP_BASE_URL}/home/slide/vote/${currentSlide.slideId}`}
+                                {`${process.env.REACT_APP_BASE_URL}/home/presentation/${presentDetail.presentId}/vote`}
                             </p>
                             <button
                                 className="rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
                                 onClick={() => {
                                     navigator.clipboard.writeText(
-                                        `${process.env.REACT_APP_BASE_URL}/home/slide/vote/${currentSlide.slideId}`
+                                        `${process.env.REACT_APP_BASE_URL}/home/presentation/${presentDetail.presentId}/vote`
                                     );
                                     notifyCopy();
                                 }}

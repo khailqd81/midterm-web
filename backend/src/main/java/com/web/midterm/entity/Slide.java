@@ -34,7 +34,7 @@ public class Slide {
 
 	@ManyToOne(cascade = { CascadeType.DETACH, CascadeType.MERGE, 
 				CascadeType.PERSIST, CascadeType.REFRESH })
-	@JoinColumn(name = "pre_id")
+	@JoinColumn(name = "present_id")
 	@JsonIgnore
 	private Presentation presentation;
 

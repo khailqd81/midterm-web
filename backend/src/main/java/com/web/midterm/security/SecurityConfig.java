@@ -47,8 +47,7 @@ public class SecurityConfig {
 			CorsConfiguration cors = new CorsConfiguration().applyPermitDefaultValues();
 			cors.addAllowedMethod(HttpMethod.DELETE);
 			cors.addAllowedMethod(HttpMethod.PUT);
-			System.out.println("Frontend: " + frontendUrl);
-//			cors.addAllowedOrigin("*");
+			//cors.addAllowedOrigin("*");
 //			cors.addAllowedOrigin(frontendUrl);
 //			cors.addAllowedOrigin("http://localhost:3000");
 			cors.setAllowCredentials(true);
@@ -61,7 +60,7 @@ public class SecurityConfig {
 		http.csrf().disable();
 
 		http.authorizeHttpRequests().antMatchers("/api/login").permitAll().antMatchers("/api/user/register").permitAll()
-				.antMatchers("/api/slides/vote/**").permitAll()
+				.antMatchers("/api/presents/vote/**").permitAll()
 				.antMatchers("/api/user/confirm").permitAll().antMatchers("/api/user/oauth2").permitAll()
 				.antMatchers("/api/user/refreshToken").permitAll().antMatchers("/api/groups/**").authenticated()
 				.antMatchers("/api/user/**").authenticated();

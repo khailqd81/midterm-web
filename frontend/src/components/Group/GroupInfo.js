@@ -129,7 +129,7 @@ export default function GroupInfo() {
 
     useEffect(() => {
         getGroupInfo();
-    }, [params.groupId, navigate, getGroupInfo]);
+    }, [params.groupId, navigate]);
 
     // On input mail invite change
     const onInviteMailChange = (e) => {

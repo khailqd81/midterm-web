@@ -12,6 +12,7 @@ function Presentation() {
     const [presentName, setPresentName] = useState("");
 
     const [presenList, setPresenList] = useState([]);
+    const [coPresenList, setCoPresenList] = useState([]);
     const [refreshPage, setRefreshPage] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
@@ -32,6 +33,7 @@ function Presentation() {
         // Set presentation list
         if (response.data?.presentationList.length > 0) {
             setPresenList(response.data?.presentationList);
+            setCoPresenList(response.data?.coPresentationList);
         }
 
         setIsLoading(false);
@@ -65,7 +67,7 @@ function Presentation() {
         const response = await axios.post(
             `${process.env.REACT_APP_API_ENDPOINT}/api/presents`,
             {
-                preName: presentName,
+                presentName: presentName,
             },
             {
                 headers: { Authorization: "Bearer " + accessToken },
@@ -106,10 +108,10 @@ function Presentation() {
         navigate(`/home/presentation/${presentId}`);
     };
 
-    const callApiDeletePresent = async (preId) => {
+    const callApiDeletePresent = async (presentId) => {
         let accessToken = localStorage.getItem("access_token");
         const response = await axios.delete(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${preId}`,
+            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}`,
             {
                 headers: {
                     Authorization: "Bearer " + accessToken,
@@ -118,14 +120,16 @@ function Presentation() {
         );
         if (response.status === 200) {
             setPresenList((prev) => {
-                var newPresentList = prev.filter((p) => p.preId !== preId);
+                var newPresentList = prev.filter(
+                    (p) => p.presentId !== presentId
+                );
                 console.log(newPresentList);
                 return [...newPresentList];
             });
         }
     };
 
-    const handleDeletePresent = async (e, preId) => {
+    const handleDeletePresent = async (e, presentId) => {
         let accessToken = localStorage.getItem("access_token");
         if (accessToken == null) {
             navigate("/login");
@@ -133,7 +137,7 @@ function Presentation() {
 
         try {
             e.target.disabled = true;
-            await callApiDeletePresent(preId);
+            await callApiDeletePresent(presentId);
             e.target.disabled = false;
         } catch (error) {
             try {
@@ -141,7 +145,7 @@ function Presentation() {
             } catch (error2) {
                 navigate("/login");
             }
-            await callApiDeletePresent(preId);
+            await callApiDeletePresent(presentId);
         } finally {
             e.target.disabled = false;
         }
@@ -221,19 +225,19 @@ function Presentation() {
                             return (
                                 <li
                                     className="first:mt-4 border-b flex justify-between cursor-pointer  first:border-t"
-                                    key={g.preId}
+                                    key={g.presentId}
                                 >
                                     <div
                                         className="flex justify-between px-4 py-4 cursor-pointer grow hover:bg-slate-200"
                                         onClick={() =>
-                                            handleGetPresentDetail(g.preId)
+                                            handleGetPresentDetail(g.presentId)
                                         }
                                     >
                                         <div>
                                             <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">
-                                                {g.preName[0]}
+                                                {g.presentName[0]}
                                             </span>
-                                            {g.preName}
+                                            {g.presentName}
                                         </div>
                                         <div className="flex">
                                             <BsFillCalendarCheckFill
@@ -255,7 +259,7 @@ function Presentation() {
                                                 toast.promise(
                                                     handleDeletePresent(
                                                         e,
-                                                        g.preId
+                                                        g.presentId
                                                     ),
                                                     {
                                                         pending:
@@ -274,6 +278,54 @@ function Presentation() {
                                             className="self-center ml-4 hover:opacity-50"
                                             size={20}
                                         />
+                                    </div>
+                                </li>
+                            );
+                        })
+                    ) : (
+                        <div className="ml-4 text-cyan-500">
+                            You have not created any presentation yet
+                        </div>
+                    )}
+                </ul>
+                <div className="font-bold text-2xl flex">
+                    <HiUserGroup size={40} className="text-[#61dafb] mr-4" />
+                    <span className="self-center">
+                        Presentations Collaborate
+                    </span>
+                </div>
+                <ul>
+                    {coPresenList.length > 0 ? (
+                        coPresenList.map((g) => {
+                            return (
+                                <li
+                                    className="first:mt-4 border-b flex justify-between cursor-pointer  first:border-t"
+                                    key={g.presentId}
+                                >
+                                    <div
+                                        className="flex justify-between px-4 py-4 cursor-pointer grow hover:bg-slate-200"
+                                        onClick={() =>
+                                            handleGetPresentDetail(g.presentId)
+                                        }
+                                    >
+                                        <div>
+                                            <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">
+                                                {g.presentName[0]}
+                                            </span>
+                                            {g.presentName}
+                                        </div>
+                                        <div className="flex">
+                                            <BsFillCalendarCheckFill
+                                                className="self-center mr-2"
+                                                size={20}
+                                            />
+                                            <span className="italic self-center mr-2">
+                                                Created at:
+                                            </span>{" "}
+                                            {new Date(g.createdAt)
+                                                .toString()
+                                                .slice(0, 24)}
+                                        </div>
                                     </div>
                                 </li>
                             );

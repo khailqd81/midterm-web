@@ -10,4 +10,5 @@ public interface PresentationRepository extends JpaRepository<Presentation, Inte
 	public Presentation findById(int preId);
 	public List<Presentation> findAll();
 	public List<Presentation> findByUserUserId(int userId);
+	public List<Presentation> findByUserUserIdAndIsDeleted(int userId, boolean isDeleted);
 }

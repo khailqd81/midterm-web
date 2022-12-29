@@ -53,7 +53,7 @@ function App() {
                                 element={<GroupLink />}
                             />
                             <Route
-                                path="/home/slide/vote/:slideId"
+                                path="/home/presentation/:presentId/vote"
                                 element={<SlidePresent />}
                             />
                             <Route element={<ProtectedRoutes />}>

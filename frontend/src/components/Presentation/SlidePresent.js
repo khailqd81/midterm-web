@@ -101,13 +101,13 @@ function SlidePresent() {
     const params = useParams();
     // Call api group information
     async function callApiSlideDetail() {
-        const slideId = params.slideId;
+        const presentId = params.presentId;
         const response = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideId}`
+            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/vote/${presentId}`
         );
 
         if (response.status === 200) {
-            let newSlideDetail = response.data.slide;
+            let newSlideDetail = response.data.presentation.currentSlide;
             newSlideDetail.optionList.sort((a, b) => a.optionId - b.optionId);
             setSlideDetail(newSlideDetail);
         }
@@ -115,9 +115,9 @@ function SlidePresent() {
     }
     // Get group info, do some validate
     async function getSlideDetail() {
-        const slideId = params.slideId;
+        const presentId = params.presentId;
 
-        if (slideId == null || slideId.trim().length <= 0) {
+        if (presentId == null || presentId.trim().length <= 0) {
             return;
         }
         try {

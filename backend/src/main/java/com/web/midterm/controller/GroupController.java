@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,17 +56,19 @@ public class GroupController {
 	// Get list group of one user
 	@GetMapping
 	public ResponseEntity<?> getGroups() {
-		// Get user from access token
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User owner = userService.findByEmail(currentPrincipalName);
+		User owner = userService.getCurrentAuthUser();
 
 		List<UserGroup> userGroups = groupService.findGroupByUserId(owner.getUserId());
+		
 		// Divide result into 3 category
 		List<Group> ownerGroup = new ArrayList<>();
 		List<Group> memberGroup = new ArrayList<>();
 		List<Group> coOwnerGroup = new ArrayList<>();
 		for (UserGroup g : userGroups) {
+			Group groupDb = g.getGroup();
+			if (groupDb.isDeleted()) {
+				continue;
+			}
 			if (g.getGroupRole().getRoleName().equals("owner")) {
 				ownerGroup.add(g.getGroup());
 			} else if (g.getGroupRole().getRoleName().equals("co-owner")) {
@@ -127,16 +130,15 @@ public class GroupController {
 		return ResponseEntity.ok().body(result);
 	}
 
+	// Update member role
 	@PostMapping("/member")
 	public ResponseEntity<?> saveMember(@RequestBody Map<String, String> payload) throws Exception {
-		// Get user from access token
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User owner = userService.findByEmail(currentPrincipalName);
+		User owner = userService.getCurrentAuthUser();
 		// Get params from request
 		int userId = Integer.parseInt(payload.get("userId"));
 		int groupId = Integer.parseInt(payload.get("groupId"));
 		String role = payload.get("role");
+		
 		Group group = groupService.findById(groupId);
 		if (owner.getUserId() != group.getUser().getUserId()) {
 			throw new Exception("You don't have permission to change role");
@@ -158,7 +160,8 @@ public class GroupController {
 		result.put("message", "Save member OK");
 		return ResponseEntity.ok().body(result);
 	}
-
+	
+	// Join group by link
 	@GetMapping("/join/{groupLink}")
 	public ResponseEntity<?> joinGroup(@PathVariable String groupLink) throws Exception {
 		Map<String, String> result = new HashMap<>();
@@ -185,6 +188,7 @@ public class GroupController {
 		return ResponseEntity.ok().body(result);
 	}
 	
+	// Send mail invite member
 	@PostMapping("/invite")
 	public ResponseEntity<?> sendInviteEmail(@RequestBody Map<String,String> data) throws Exception {
 		// Get user from access token
@@ -209,9 +213,19 @@ public class GroupController {
 		result.put("message", "Invite member by email OK");
 		return ResponseEntity.ok().body(result);
 	}
+	
+	@DeleteMapping("/{groupId}")
+	public ResponseEntity<?> deleteGroup(@PathVariable int groupId) throws Exception {
+		groupService.delete(groupId);
+		Map<String, String> response = new HashMap<>();
+		response.put("message", "Delete group Ok");
+		return ResponseEntity.ok().body(response);
+	}
+	
 	@Data
 	public class UserGroupResponse {
 		private User user;
 		private String role;
 	}
+
 }
