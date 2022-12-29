@@ -16,6 +16,7 @@ import Presentation from "./components/Presentation/Presentation";
 import PresentationEdit from "./components/Presentation/PresentationEdit";
 import SlidePresent from "./components/Presentation/SlidePresent";
 import LandingPage from "./components/LandingPage";
+import PresentationCoList from "./components/Presentation/PresentationCoList";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,10 @@ function App() {
                                 <Route
                                     path="/home/presentation/:presentId"
                                     element={<PresentationEdit />}
+                                />
+                                <Route
+                                    path="/home/presentation/:presentId/coList"
+                                    element={<PresentationCoList />}
                                 />
                                 <Route
                                     path="/home/profile"

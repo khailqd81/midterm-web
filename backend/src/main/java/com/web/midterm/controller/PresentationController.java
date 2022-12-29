@@ -205,19 +205,21 @@ public class PresentationController {
 	}
 
 	@PostMapping("/{presentId}/coList")
-	public ResponseEntity<?> addPresentationCo(@PathVariable int presentId, @RequestBody Map<String, Integer> payload)
+	public ResponseEntity<?> addPresentationCo(@PathVariable int presentId, @RequestBody Map<String, String> payload)
 			throws Exception {
 		Presentation presentation = presentationService.findById(presentId);
-		if (payload.get("userId") == null) {
-			throw new Exception("There is no user id provided");
+		if (payload.get("email") == null) {
+			throw new Exception("There is no email provided");
 		}
-		User newColaborator = userService.findByUserId(payload.get("userId"));
+		User newColaborator = userService.findByEmail(payload.get("email"));
 		if (newColaborator == null) {
 			// Entity not found
-			throw new Exception("User Id not found");
+			throw new Exception("Email not found");
 		}
 		List<User> coList = presentation.getUserList();
-
+		if (newColaborator.getUserId() == presentation.getUser().getUserId()) {
+			throw new Exception("Owner can't be collaborator");
+		}
 		// Check exist collaborator
 		int index = coList.indexOf(newColaborator);
 		if (index == -1) {

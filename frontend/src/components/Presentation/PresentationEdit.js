@@ -541,7 +541,11 @@ function PresentationEdit() {
                         Save slide
                     </button>
                     <button
-                        onClick={handleGetCollaborator}
+                        onClick={() =>
+                            navigate(
+                                `/home/presentation/${presentDetail.presentId}/coList`
+                            )
+                        }
                         className="rounded mr-4 px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
                     >
                         Collaborator

@@ -7,12 +7,14 @@ import { MdEmail } from "react-icons/md";
 import { refreshAccessToken } from "../utils/auth";
 import ReactLoading from "react-loading";
 import { toast } from "react-toastify";
+import { BsFillTrashFill } from "react-icons/bs";
 
 export default function PresentationCoList() {
     /* Component State */
     const [inviteMail, setInviteMail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [coList, setCoList] = useState([]);
+    const [refreshPage, setRefreshPage] = useState(true);
     const [presentDetail, setPresentDetail] = useState({
         presentId: "",
         createdAt: "",
@@ -25,93 +27,89 @@ export default function PresentationCoList() {
     const navigate = useNavigate();
     const params = useParams();
 
-    // Toast success copied invite link
-    const notifyCopy = () =>
-        toast.success("Link copied", {
-            position: "top-center",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: false,
-            draggable: true,
-            progress: undefined,
-            theme: "light",
-        });
-    async function callApiGetColist(presentId) {
-        const accessToken = localStorage.getItem("access_token");
-        const response = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}/coList`,
-            {
-                headers: { Authorization: "Bearer " + accessToken },
-            }
-        );
-    }
-
-    // Get group info, do some validate
-    async function getColist() {
-        const currentPresentId = presentDetail.presentId;
-        if (currentPresentId == null) {
-            return;
-        }
-        try {
-            await callApiGetColist(currentPresentId);
-        } catch (error) {
-            await callApiGetColist(currentPresentId);
-        }
-    }
-
-    // Call api group information
-    async function callApiPresentDetail() {
-        const presentId = params.presentId;
-        const accessToken = localStorage.getItem("access_token");
-        const response = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}`,
-            {
-                headers: { Authorization: "Bearer " + accessToken },
-            }
-        );
-
-        if (response.status === 200) {
-            let newPresentDetail = { ...response.data.presentation };
-            newPresentDetail.slideList.sort((a, b) => a.slideId - b.slideId);
-            newPresentDetail.slideList[0]?.optionList?.sort(
-                (a, b) => a.optionId - b.optionId
+    useEffect(() => {
+        async function callApiGetColist(presentId) {
+            const accessToken = localStorage.getItem("access_token");
+            const response = await axios.get(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}/coList`,
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
             );
-            setPresentDetail({
-                ...newPresentDetail,
-            });
-            newPresentDetail.currentSlide.optionList.sort(
-                (a, b) => a.optionId - b.optionId
-            );
+            setCoList(response.data.coList);
         }
-        setIsLoading(false);
-    }
 
-    // Get group info, do some validate
-    async function getPresentDetail() {
-        const presentId = params.presentId;
-        let accessToken = localStorage.getItem("access_token");
-        if (accessToken == null) {
-            navigate("/login");
-        }
-        if (presentId == null || presentId.trim().length <= 0) {
-            return;
-        }
-        try {
-            await callApiPresentDetail();
-        } catch (error) {
+        // Get group info, do some validate
+        async function getColist() {
+            const currentPresentId = presentDetail.presentId;
+            console.log(currentPresentId);
+            if (
+                currentPresentId == null ||
+                currentPresentId === undefined ||
+                currentPresentId <= 0
+            ) {
+                return;
+            }
             try {
-                await refreshAccessToken();
+                await callApiGetColist(currentPresentId);
             } catch (error) {
-                navigate("/login");
+                await callApiGetColist(currentPresentId);
             }
-            await callApiPresentDetail();
         }
-    }
+        getColist();
+    }, [presentDetail.presentId, refreshPage]);
 
     useEffect(() => {
+        // Call api group information
+        async function callApiPresentDetail() {
+            const presentId = params.presentId;
+            const accessToken = localStorage.getItem("access_token");
+            const response = await axios.get(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}`,
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
+            );
+
+            if (response.status === 200) {
+                let newPresentDetail = { ...response.data.presentation };
+                newPresentDetail.slideList.sort(
+                    (a, b) => a.slideId - b.slideId
+                );
+                newPresentDetail.slideList[0]?.optionList?.sort(
+                    (a, b) => a.optionId - b.optionId
+                );
+                setPresentDetail({
+                    ...newPresentDetail,
+                });
+                setGroupOwner(response.data.presentation.user);
+            }
+            setIsLoading(false);
+        }
+
+        // Get group info, do some validate
+        async function getPresentDetail() {
+            const presentId = params.presentId;
+            let accessToken = localStorage.getItem("access_token");
+            if (accessToken == null) {
+                navigate("/login");
+            }
+            if (presentId == null || presentId.trim().length <= 0) {
+                return;
+            }
+            try {
+                await callApiPresentDetail();
+            } catch (error) {
+                try {
+                    await refreshAccessToken();
+                } catch (error) {
+                    navigate("/login");
+                }
+                await callApiPresentDetail();
+            }
+        }
         getPresentDetail();
-    }, [navigate]);
+    }, [navigate, params.presentId, refreshPage]);
 
     // On input mail invite change
     const onInviteMailChange = (e) => {
@@ -120,7 +118,7 @@ export default function PresentationCoList() {
             setErrorMessage("Email is required");
             return;
         }
-        let pattern = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+        let pattern = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
         let result = pattern.test(e.target.value);
         if (!result) {
             setErrorMessage("Invali email format");
@@ -140,7 +138,7 @@ export default function PresentationCoList() {
             setErrorMessage("Email is required");
             return Promise.reject();
         }
-        let pattern = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+        let pattern = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
         let result = pattern.test(inviteMail);
         if (!result) {
             setErrorMessage("Invali email format");
@@ -153,29 +151,52 @@ export default function PresentationCoList() {
             e.target.disabled = false;
         } catch (error) {
             await refreshAccessToken();
-            await callApiSendInviteMail();
-            e.target.disabled = false;
+            try {
+                await callApiSendInviteMail();
+                e.target.disabled = false;
+            } catch (error) {
+                e.target.disabled = false;
+                setInviteMail("");
+                return Promise.reject();
+            }
         }
-        //setShowSendMailResult(true);
     };
 
     // Call api send invite mail
     async function callApiSendInviteMail() {
         const accessToken = localStorage.getItem("access_token");
         const response = await axios.post(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/groups/invite`,
+            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentDetail.presentId}/coList`,
             {
-                memberEmail: inviteMail,
-                presentId: presentDetail.presentId,
+                email: inviteMail,
             },
             {
                 headers: { Authorization: "Bearer " + accessToken },
             }
         );
         if (response.status === 200) {
+            setInviteMail("");
+            setRefreshPage(!refreshPage);
             return Promise.resolve();
         }
     }
+
+    const handleRemoveCollaborator = async (userId, email) => {
+        if (!window.confirm(`Remove collaborator ${email}`)) {
+            return;
+        }
+        const accessToken = localStorage.getItem("access_token");
+        const response = await axios.delete(
+            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentDetail.presentId}/coList/${userId}`,
+            {
+                headers: { Authorization: "Bearer " + accessToken },
+            }
+        );
+        if (response.status === 200) {
+            setRefreshPage(!refreshPage);
+            return Promise.resolve();
+        }
+    };
 
     if (isLoading) {
         return (
@@ -235,16 +256,16 @@ export default function PresentationCoList() {
                         }}
                         value={inviteMail}
                         className="px-4 py-2 border rounded focus:border-cyan-300 outline-none shadow-2xl"
-                        placeholder="Member's email"
+                        placeholder="Collaborator's email"
                     />
                     <button
                         onClick={(e) =>
                             toast.promise(
                                 async () => await handleSendInviteLink(e),
                                 {
-                                    pending: "Sending invite link",
-                                    success: "Send invite link success 👌",
-                                    error: "Send invite link failed  🤯",
+                                    pending: "Add collaborator",
+                                    success: "Add collaborator success 👌",
+                                    error: "Add collaborator failed  🤯",
                                 },
                                 {
                                     className: "mt-10",
@@ -256,6 +277,7 @@ export default function PresentationCoList() {
                         Invite Collaborator By Email
                     </button>
                 </div>
+                <p className="text-red-500 text-sm">{errorMessage}</p>
             </div>
 
             <div className="font-bold text-2xl mb-2">Collaborators</div>
@@ -266,7 +288,7 @@ export default function PresentationCoList() {
                         <th>Firstname</th>
                         <th>Lastname</th>
                         <th>Email</th>
-                        <th>Role</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -281,16 +303,30 @@ export default function PresentationCoList() {
                                     <td className=" py-4">{m.firstName}</td>
                                     <td className=" py-4">{m.lastName}</td>
                                     <td className=" py-4">{m.email}</td>
+                                    <td className=" py-4">
+                                        <BsFillTrashFill
+                                            size={26}
+                                            className="ml-4 hover:cursor-pointer"
+                                            onClick={() =>
+                                                handleRemoveCollaborator(
+                                                    m.userId,
+                                                    m.email
+                                                )
+                                            }
+                                        />
+                                    </td>
                                 </tr>
                             );
                         })}
                 </tbody>
             </table>
             <button
-                onClick={() => navigate("/home")}
+                onClick={() =>
+                    navigate(`/home/presentation/${presentDetail.presentId}`)
+                }
                 className="mt-4 rounded px-4 py-2 shadow-xl hover:bg-[#61fbe2] bg-[#61dafb]"
             >
-                Return home
+                Back to Presentation Edit
             </button>
         </div>
     );
