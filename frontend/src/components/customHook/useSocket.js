@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import * as io from "socket.io-client";
-
+//import * as io from "socket.io-client";
+import { io } from "socket.io-client";
 export const useSocket = (room, username) => {
     const [socket, setSocket] = useState();
     const [socketResponse, setSocketResponse] = useState({
@@ -15,23 +15,28 @@ export const useSocket = (room, username) => {
 
     const sendData = useCallback(
         (payload) => {
-            if (payload.message === "send_update") {
-                //console.log(payload.slide)
-                socket.emit("send_update", {
-                    room: room,
-                    username: username,
-                    slide: payload.slide,
-                    //messageType: "CLIENT",
-                });
-            } else {
-                socket.emit("send_vote", {
-                    room: room,
-                    username: username,
-                    option: payload.option,
-                    slideId: payload.slideId,
-                    //messageType: "CLIENT",
-                });
-            }
+            socket.emit(payload.eventName, {
+                room: room,
+                username: username,
+                ...payload.data,
+            });
+            // if (payload.eventName === "send_update") {
+            //     //console.log(payload.slide)
+            //     socket.emit("send_update", {
+            //         room: room,
+            //         username: username,
+            //         slide: payload.slide,
+            //         //messageType: "CLIENT",
+            //     });
+            // } else {
+            //     socket.emit("send_vote", {
+            //         room: room,
+            //         username: username,
+            //         option: payload.option,
+            //         slideId: payload.slideId,
+            //         //messageType: "CLIENT",
+            //     });
+            // }
         },
         [socket, room]
     );
@@ -54,11 +59,12 @@ export const useSocket = (room, username) => {
         s.on("read_message", (res) => {
             console.log("res:", res);
             setSocketResponse({
-                room: res.room,
-                username: res.username,
-                slide: res?.slide,
-                option: res?.option,
-                slideId: res?.slideId,
+                ...res,
+                // room: res.room,
+                // username: res.username,
+                // slide: res?.slide,
+                // option: res?.option,
+                // slideId: res?.slideId,
                 // content: res.content,
                 // messageType: res.messageType,
                 // createdDateTime: res.createdDateTime,

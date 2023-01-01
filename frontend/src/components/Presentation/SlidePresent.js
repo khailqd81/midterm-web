@@ -6,8 +6,9 @@ import axios from "axios";
 import { useSocket } from "../customHook/useSocket";
 import { v4 as uuidv4 } from "uuid";
 function SlidePresent() {
+    const params = useParams();
     const { isConnected, socketResponse, sendData } = useSocket(
-        "public",
+        `present${params.presentId}`,
         "khai" + uuidv4()
     );
     //
@@ -93,12 +94,12 @@ function SlidePresent() {
         optionList: [],
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [isPublic, setIsPublic] = useState(false);
     const [answer, setAnswer] = useState({
         optionName: "",
         optionId: "",
     });
     const navigate = useNavigate();
-    const params = useParams();
     // Call api group information
     async function callApiSlideDetail() {
         const presentId = params.presentId;
@@ -110,6 +111,7 @@ function SlidePresent() {
             let newSlideDetail = response.data.presentation.currentSlide;
             newSlideDetail.optionList.sort((a, b) => a.optionId - b.optionId);
             setSlideDetail(newSlideDetail);
+            setIsPublic(response.data.presentation?.public);
         }
         setIsLoading(false);
     }
@@ -162,20 +164,31 @@ function SlidePresent() {
         //     slideId: slideDetail.slideId,
         //     option: answer
         // })
-        sendData({
-            slideId: slideDetail.slideId,
-            option: answer,
-        });
-        // let accessToken = localStorage.getItem("access_token");
-        // if (accessToken == null) {
-        //     navigate("/login");
-        // }
-
-        // try {
-        //     await callApiSubmitOption();
-        // } catch (error) {
-        //     await callApiSubmitOption();
-        // }
+        // sendData({
+        //     eventName: "send_vote",
+        //     data: {
+        //         slideId: slideDetail.slideId,
+        //         option: answer,
+        //         userId: localStorage.getItem("userId"),
+        //     },
+        // });
+        try {
+            await axios.post(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/slides/vote/${slideDetail.slideId}`,
+                {
+                    optionId: answer.optionId,
+                    userId: localStorage.getItem("userId"),
+                }
+            );
+        } catch (error) {
+            await axios.post(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/slides/vote/${slideDetail.slideId}`,
+                {
+                    optionId: answer.optionId,
+                    userId: localStorage.getItem("userId"),
+                }
+            );
+        }
     };
 
     if (isLoading) {
@@ -192,6 +205,9 @@ function SlidePresent() {
         );
     }
 
+    if (!isPublic) {
+        return <div>Present is not presenting</div>;
+    }
     return (
         <div>
             <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">

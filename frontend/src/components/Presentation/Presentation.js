@@ -31,7 +31,10 @@ function Presentation() {
         }
 
         // Set presentation list
-        if (response.data?.presentationList.length > 0) {
+        if (
+            response.data?.presentationList.length > 0 ||
+            response.data?.coPresentationList.length > 0
+        ) {
             setPresenList(response.data?.presentationList);
             setCoPresenList(response.data?.coPresentationList);
         }

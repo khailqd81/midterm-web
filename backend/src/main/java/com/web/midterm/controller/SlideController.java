@@ -2,11 +2,13 @@ package com.web.midterm.controller;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,16 +18,21 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.web.midterm.entity.Option;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.Slide;
+import com.web.midterm.entity.User;
+import com.web.midterm.entity.UserAnswer;
 import com.web.midterm.repo.OptionRepository;
 import com.web.midterm.service.OptionService;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
+import com.web.midterm.service.UserAnswerService;
+import com.web.midterm.service.UserService;
 import com.web.midterm.socketio.SocketService;
 import com.web.midterm.socketio.SocketUpdateMessage;
 
@@ -42,16 +49,24 @@ public class SlideController {
 	@Autowired
 	private OptionService optionService;
 	@Autowired
+	private UserService userService;
+	@Autowired
+	private UserAnswerService userAnswerService;
+	@Autowired
 	private SocketIOServer socketIOServer;
 	@Autowired
 	private SocketService socketService;
+	@Value("${socket.url}")
+	private String socketUrl;
 
 	@PostMapping
 	public ResponseEntity<?> createSlide(@RequestBody Map<String, String> payload) throws Exception {
 		Slide s = new Slide();
 		String typeName = payload.get("typeName");
-		String presentId = payload.get("preId");
-
+		String presentId = payload.get("presentId");
+		if (typeName == null || presentId == null || typeName.length() <= 0 || presentId.length() <= 0) {
+			throw new Exception("No typeName or presentId provided");
+		}
 		if (typeName.equals("multiple")) {
 			s.setHeading("Multiple Choice");
 		} else if (typeName.equals("paragraph")) {
@@ -59,7 +74,7 @@ public class SlideController {
 		} else {
 			s.setHeading("Heading");
 		}
-		
+
 		s.setTypeName(typeName);
 		Presentation p = presentationService.findById(Integer.parseInt(presentId));
 		if (p == null) {
@@ -129,16 +144,36 @@ public class SlideController {
 				}
 			}
 		}
+		theSlide.setParagraph(slide.getParagraph());
+		theSlide.setSubHeading(slide.getSubHeading());
 		theSlide.setHeading(slide.getHeading());
 		slideService.save(theSlide);
 
 		// Handle send update slide to client through socket
-		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
-		SocketUpdateMessage socketMessage = new SocketUpdateMessage();
-		socketMessage.setRoom("public");
-		socketMessage.setUsername("khai");
-		socketMessage.setSlide(theSlide);
-		socketService.sendUpdateSlideToClient(clients, socketMessage, "public");
+		Presentation presentation = theSlide.getPresentation();
+		presentation.setCurrentSlide(theSlide);
+		// Call socket server
+		// request url
+		String url = socketUrl + "/slides";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", presentation);
+		map.put("room", presentation.getPresentId());
+		// map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
+//		Collection<SocketIOClient> clients = socketIOServer.getRoomOperations("public").getClients();
+//		SocketUpdateMessage socketMessage = new SocketUpdateMessage();
+//		socketMessage.setRoom("public");
+//		socketMessage.setUsername("khai");
+//		socketMessage.setSlide(theSlide);
+//		socketService.sendUpdateSlideToClient(clients, socketMessage, "public");
+		
 		Map<String, String> message = new HashMap<>();
 		message.put("message", "Update slide success");
 		return ResponseEntity.ok(message);
@@ -203,10 +238,10 @@ public class SlideController {
 		Presentation presentation = slide.getPresentation();
 		presentation.setCurrentSlide(slide);
 		presentationService.save(presentation);
-		
+
 		// Call socket server
 		//
-		
+
 		Map<String, Slide> message = new HashMap<>();
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);
@@ -220,6 +255,66 @@ public class SlideController {
 //		User user = userService.findByEmail(currentPrincipalName);
 
 		Slide slide = slideService.findById(slideId);
+		Map<String, Slide> message = new HashMap<>();
+		message.put("slide", slide);
+		return ResponseEntity.ok(message);
+	}
+
+	@PostMapping("/vote/{slideId}")
+	public ResponseEntity<?> updateSlideVote(@PathVariable int slideId, @RequestBody Map<String, String> payload) throws Exception {
+		// Get user from access token
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//		String currentPrincipalName = authentication.getName();
+//		User user = userService.findByEmail(currentPrincipalName);
+		String userIdStr = payload.get("userId");
+		User user = null;
+		if (userIdStr != null) {
+			int userId = Integer.parseInt(payload.get("userId"));
+			user = userService.findByUserId(userId);
+			if (user == null) {
+				throw new Exception("User Id not found");
+			}
+		} else {
+			user = userService.findByEmail("anonymous@gmail.com");
+		}
+		int optionId = Integer.parseInt(payload.get("optionId"));
+		Slide slide = slideService.findById(slideId);
+		if (slide == null) {
+			throw new Exception("Slide Id not found");
+		}
+		Option option = optionService.findById(optionId);
+		if (option == null) {
+			throw new Exception("Option Id not found");
+		}
+		if (!slide.getOptionList().contains(option)) {
+			throw new Exception("Option " + optionId + " not belong to Slide " + slideId);
+		}
+
+		option.setVote(option.getVote() + 1);
+		optionRepository.save(option);
+		
+		UserAnswer userAnswer = new UserAnswer();
+		userAnswer.setUser(user);
+		userAnswer.setOption(option);
+		userAnswer.setCreatedAt(new Date());
+		userAnswerService.save(userAnswer);
+		// Call socket server
+		// request url
+		String url = socketUrl + "/slides";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Presentation presentation = slide.getPresentation();
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", presentation);
+		map.put("room", presentation.getPresentId());
+		// map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
+
 		Map<String, Slide> message = new HashMap<>();
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);

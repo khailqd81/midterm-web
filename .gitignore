@@ -29,3 +29,15 @@
 /backend/target/classes/com/
 /backend/target/test-classes
 #/backend/src/main/resources/*.properties
+/socket/.DS_Store
+/socket/*.env
+/socket/.env
+/socket/.env.local
+/socket/.env.development.local
+/socket/.env.test.local
+/socket/.env.production.local
+/socket/node_modules
+/socket/.pnp
+/socket/.pnp.js
+/socket/bin
+/socket/public

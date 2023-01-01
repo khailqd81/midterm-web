@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.GroupRole;
@@ -41,6 +43,8 @@ public class PresentationController {
 	private PresentationService presentationService;
 	@Autowired
 	private SlideService slideService;
+	@Value("${socket.url}")
+	private String socketUrl;
 	
 	@PostMapping
 	public ResponseEntity<?> createPresentation(@RequestBody Map<String, String> payload) {
@@ -63,12 +67,14 @@ public class PresentationController {
 	}
 	
 	@PostMapping("/{presentId}/{slideId}")
-	public ResponseEntity<?> updateCurrentSlide(@PathVariable int slideId, @PathVariable int presentId) throws Exception {
+	public ResponseEntity<?> updateCurrentSlide(@PathVariable int presentId, @PathVariable int slideId) throws Exception {
 		// Get user from access token
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String currentPrincipalName = authentication.getName();
 		User owner = userService.findByEmail(currentPrincipalName);
 
+		System.out.println("slideId:"+slideId);
+		
 		Slide s = slideService.findById(slideId);
 		Presentation p = presentationService.findById(presentId);
 		if (s == null || p== null) {
@@ -83,6 +89,20 @@ public class PresentationController {
 		presentationService.save(p);
 		
 		// call socket server
+		// request url
+		String url = socketUrl +"/presents";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		map.put("room", p.getPresentId());
+		//map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		
 		Map<String, String> message = new HashMap<>();
@@ -91,7 +111,7 @@ public class PresentationController {
 	}
 	
 	// Update presentation group present
-	@PutMapping
+	@PutMapping("/group")
 	public ResponseEntity<?> updatePresentation(@RequestBody Map<String, Integer> payload) throws Exception {
 		// Get user from access token
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -116,12 +136,34 @@ public class PresentationController {
 		}
 		p.setGroup(g);
 		presentationService.save(p);
-
+		
+		// Call socket server
+		//
+		
 		Map<String, String> message = new HashMap<>();
 		message.put("message", "Present presentation success");
 		return ResponseEntity.ok(message);
 	}
-
+	
+	@PutMapping
+	public ResponseEntity<?> updatePresentationPublic(@RequestBody Presentation updatePresent) throws Exception {
+		// Get presentation from database
+		Presentation p = presentationService.findById(updatePresent.getPresentId());
+		// Check exist presentation
+		if (p == null) {
+			throw new Exception("PresentId not found");
+		}
+		// Set public true and group null
+		p.setGroup(null);
+		System.out.println("update:" + updatePresent.isPublic());
+		p.setPublic(updatePresent.isPublic());
+		
+		presentationService.save(p);
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Update presentation isPublic success");
+		return ResponseEntity.ok(message);
+	}
+	
 	@GetMapping
 	public ResponseEntity<?> getPresentations() {
 		// Get user from access token
