@@ -8,8 +8,12 @@ import { BiLinkAlt } from "react-icons/bi";
 import { refreshAccessToken } from "../utils/auth";
 import ReactLoading from "react-loading";
 import { toast } from "react-toastify";
+import { useSocket } from "../customHook/useSocket";
+import { BarChart, Bar, LabelList, XAxis, ResponsiveContainer } from "recharts";
 
 export default function GroupInfo() {
+    //const { socketResponse } = useSocket("public", "khai");
+
     /* Component State */
     const [inviteMail, setInviteMail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -22,12 +26,49 @@ export default function GroupInfo() {
         groupName: "",
         members: [],
         groupLink: "",
+        present: null,
     });
+    const { socketResponse } = useSocket(
+        `present${groupInfo.present?.presentId}`,
+        "khai"
+    );
     const [groupOwner, setGroupOwner] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     /**/
     const navigate = useNavigate();
     const params = useParams();
+    useEffect(() => {
+        console.log(socketResponse);
+        setGroupInfo((prev) => {
+            return {
+                ...prev,
+                present: { ...socketResponse },
+            };
+        });
+    }, [socketResponse]);
+
+    // useEffect(() => {
+    //     console.log(socketResponse);
+    //     if (socketResponse?.room === "public") {
+    //         const groupId = socketResponse.groupId;
+    //         if (groupInfo.groupId !== groupId) {
+    //             return;
+    //         }
+    //         const newPresent = socketResponse.present;
+    //         setGroupInfo((prev) => {
+    //             return {
+    //                 ...prev,
+    //                 present: { ...newPresent },
+    //             };
+    //         });
+    //         toast.info(`Presenting ${newPresent.presentName} in group`, {
+    //             autoClose: false,
+    //             style: {
+    //                 marginTop: "50px",
+    //             },
+    //         });
+    //     }
+    // }, [socketResponse, groupInfo.groupId]);
 
     // Toast success copied invite link
     const notifyCopy = () =>
@@ -363,9 +404,60 @@ export default function GroupInfo() {
                 </div>
                 <p className="text-red-500 text-sm">{errorMessage}</p>
             </div>
-
+            {groupInfo.present !== null && (
+                <div>
+                    <div className="font-bold text-2xl mb-2">
+                        Presenting Presentation
+                    </div>
+                    <div className="italic flex">
+                        <div className="flex mr-8">
+                            <FaUserAlt size={20} className="mr-2" />
+                            <span className="font-bold mr-2">
+                                Presentation:
+                            </span>{" "}
+                            {groupInfo.present?.presentName}
+                        </div>
+                        <div className="flex mr-8">
+                            <FaUserAlt size={20} className="mr-2" />
+                            <span className="font-bold mr-2">
+                                Created By:
+                            </span>{" "}
+                            {groupInfo.present?.user.firstName}
+                        </div>
+                    </div>
+                    <div
+                        className="mt-4 text-center border px-8 py-6 shadow-lg hover:shadow-xl hover:border-sky-400 cursor-pointer rounded-lg max-w-[10vw] uppercase"
+                        onClick={() =>
+                            navigate(
+                                `/home/presentation/${groupInfo.present?.presentId}/vote`
+                            )
+                        }
+                    >
+                        {groupInfo.present?.currentSlide?.typeName}
+                    </div>
+                    <div className="flex justify-center my-4">
+                        <BarChart
+                            className="shadow-xl rounded-lg"
+                            width={740}
+                            height={250}
+                            data={groupInfo.present?.currentSlide?.optionList}
+                            margin={{
+                                top: 20,
+                                right: 30,
+                                left: 20,
+                                bottom: 20,
+                            }}
+                        >
+                            <XAxis dataKey="optionName" />
+                            <Bar dataKey="vote" fill="#8884d8">
+                                <LabelList dataKey="vote" position="top" />
+                            </Bar>
+                        </BarChart>
+                    </div>
+                </div>
+            )}
             <div className="font-bold text-2xl mb-2">Group member</div>
-            <table className="w-full shadow-xl px-4 py-2">
+            <table className="w-full shadow-xl px-4 py-4">
                 <thead>
                     <tr className="uppercase text-left border-b">
                         <th className="px-4 py-2">Index</th>

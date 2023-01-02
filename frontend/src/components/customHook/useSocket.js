@@ -55,7 +55,12 @@ export const useSocket = (room, username) => {
             setIsConnected(true);
         });
         setSocket(s);
-
+        s.on("present_group", (res) => {
+            console.log("res present group:", res);
+            setSocketResponse({
+                ...res,
+            });
+        });
         s.on("read_message", (res) => {
             console.log("res:", res);
             setSocketResponse({

@@ -121,6 +121,7 @@ public class GroupController {
 //		result.put("coowner", coOwnerGroup);
 //		result.put("member", memberGroup);
 		Map<String, Object> result = new HashMap<>();
+		result.put("present", group.getPresent());
 		result.put("groupId", group.getGroupId());
 		result.put("groupLink", group.getGroupLink());
 		result.put("groupName", group.getGroupName());
@@ -220,6 +221,23 @@ public class GroupController {
 		Map<String, String> response = new HashMap<>();
 		response.put("message", "Delete group Ok");
 		return ResponseEntity.ok().body(response);
+	}
+	
+	@GetMapping("/{groupId}/isMember")
+	public ResponseEntity<?> isUserInGroup(@PathVariable int groupId) throws Exception {
+		User user = userService.getCurrentAuthUser();
+		UserGroup userGroup = groupService.findByUserIdAndGroupId(user.getUserId(), groupId);
+		Map<String, Object> response = new HashMap<>();
+		
+		if (userGroup != null) {
+			response.put("message", "User is member of group");
+			response.put("isMember", true);
+			return ResponseEntity.ok().body(response);
+		} 
+		response.put("message", "User is not member of group");
+		response.put("isMember", false);
+		return ResponseEntity.ok().body(response);
+		
 	}
 	
 	@Data

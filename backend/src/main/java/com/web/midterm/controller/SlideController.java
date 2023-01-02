@@ -34,7 +34,6 @@ import com.web.midterm.service.SlideService;
 import com.web.midterm.service.UserAnswerService;
 import com.web.midterm.service.UserService;
 import com.web.midterm.socketio.SocketService;
-import com.web.midterm.socketio.SocketUpdateMessage;
 
 @RestController
 @RequestMapping("/api/slides")
@@ -58,7 +57,8 @@ public class SlideController {
 	private SocketService socketService;
 	@Value("${socket.url}")
 	private String socketUrl;
-
+	
+	// Create new Slide
 	@PostMapping
 	public ResponseEntity<?> createSlide(@RequestBody Map<String, String> payload) throws Exception {
 		Slide s = new Slide();
@@ -88,6 +88,7 @@ public class SlideController {
 		return ResponseEntity.ok(message);
 	}
 
+	// Update slide
 	@PutMapping
 	public ResponseEntity<?> updateSlide(@RequestBody Slide slide) throws Exception {
 

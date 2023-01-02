@@ -45,7 +45,9 @@ public class PresentationController {
 	private SlideService slideService;
 	@Value("${socket.url}")
 	private String socketUrl;
-	
+
+	/* API CRUD Presentation */
+	// Create new presentation
 	@PostMapping
 	public ResponseEntity<?> createPresentation(@RequestBody Map<String, String> payload) {
 		// Get user from access token
@@ -65,105 +67,8 @@ public class PresentationController {
 		message.put("message", "Create presentation success");
 		return ResponseEntity.ok(message);
 	}
-	
-	@PostMapping("/{presentId}/{slideId}")
-	public ResponseEntity<?> updateCurrentSlide(@PathVariable int presentId, @PathVariable int slideId) throws Exception {
-		// Get user from access token
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User owner = userService.findByEmail(currentPrincipalName);
 
-		System.out.println("slideId:"+slideId);
-		
-		Slide s = slideService.findById(slideId);
-		Presentation p = presentationService.findById(presentId);
-		if (s == null || p== null) {
-			throw new Exception("Slide or present id  not found");
-		}
-
-		if (s.getPresentation().getPresentId() != presentId) {
-			throw new Exception("Slide " + slideId + " not belong to present" + presentId);
-		}
-		
-		p.setCurrentSlide(s);
-		presentationService.save(p);
-		
-		// call socket server
-		// request url
-		String url = socketUrl +"/presents";
-
-		// create an instance of RestTemplate
-		RestTemplate restTemplate = new RestTemplate();
-
-		// request body parameters
-		Map<String, Object> map = new HashMap<>();
-		map.put("presentation", p);
-		map.put("room", p.getPresentId());
-		//map.put("room", p.getPresentId());
-
-		// send POST request
-		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
-		//
-		
-		Map<String, String> message = new HashMap<>();
-		message.put("message", "Update current slide success");
-		return ResponseEntity.ok(message);
-	}
-	
-	// Update presentation group present
-	@PutMapping("/group")
-	public ResponseEntity<?> updatePresentation(@RequestBody Map<String, Integer> payload) throws Exception {
-		// Get user from access token
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User user = userService.findByEmail(currentPrincipalName);
-
-		int groupId = payload.get("groupId");
-		int presentId = payload.get("presentId");
-
-		Presentation p = presentationService.findById(presentId);
-		Group g = groupService.findById(groupId);
-
-		if (p == null || g == null) {
-			throw new Exception("PresentId or GroupId not found");
-		}
-		if (g.getUser().getUserId() != user.getUserId()) {
-			UserGroup userGroup = groupService.findByUserIdAndGroupId(user.getUserId(), groupId);
-			GroupRole role = userGroup.getGroupRole();
-			if (role.getRoleName()=="member") {
-				throw new Exception("You don't have permission to present");				
-			}
-		}
-		p.setGroup(g);
-		presentationService.save(p);
-		
-		// Call socket server
-		//
-		
-		Map<String, String> message = new HashMap<>();
-		message.put("message", "Present presentation success");
-		return ResponseEntity.ok(message);
-	}
-	
-	@PutMapping
-	public ResponseEntity<?> updatePresentationPublic(@RequestBody Presentation updatePresent) throws Exception {
-		// Get presentation from database
-		Presentation p = presentationService.findById(updatePresent.getPresentId());
-		// Check exist presentation
-		if (p == null) {
-			throw new Exception("PresentId not found");
-		}
-		// Set public true and group null
-		p.setGroup(null);
-		System.out.println("update:" + updatePresent.isPublic());
-		p.setPublic(updatePresent.isPublic());
-		
-		presentationService.save(p);
-		Map<String, String> message = new HashMap<>();
-		message.put("message", "Update presentation isPublic success");
-		return ResponseEntity.ok(message);
-	}
-	
+	// Get list presentation of one user
 	@GetMapping
 	public ResponseEntity<?> getPresentations() {
 		// Get user from access token
@@ -199,6 +104,7 @@ public class PresentationController {
 		return ResponseEntity.ok(message);
 	}
 
+	// Get one presentation
 	@GetMapping("/{presentId}")
 	public ResponseEntity<?> getPresentationDetail(@PathVariable int presentId) throws Exception {
 		// Get user from access token
@@ -210,11 +116,13 @@ public class PresentationController {
 		if (presentation == null) {
 			throw new Exception("Presentation id not found");
 		}
-		Map<String, Presentation> message = new HashMap<>();
+		Map<String, Object> message = new HashMap<>();
 		message.put("presentation", presentation);
+		message.put("group", presentation.getGroup());
 		return ResponseEntity.ok(message);
 	}
-	
+
+	// Get presentation detail for vote page
 	@GetMapping("/vote/{presentId}")
 	public ResponseEntity<?> getPresentationDetailForVote(@PathVariable int presentId) throws Exception {
 		// Get user from access token
@@ -223,20 +131,157 @@ public class PresentationController {
 		if (presentation == null) {
 			throw new Exception("Presentation id not found");
 		}
-		Map<String, Presentation> message = new HashMap<>();
+		Map<String, Object> message = new HashMap<>();
 		message.put("presentation", presentation);
+		message.put("group", presentation.getGroup());
 		return ResponseEntity.ok(message);
 	}
-	
+
+	// Update presentation public or not presenting
+	@PutMapping
+	public ResponseEntity<?> updatePresentationPublic(@RequestBody Presentation updatePresent) throws Exception {
+		// Get presentation from database
+		Presentation p = presentationService.findById(updatePresent.getPresentId());
+		// Check exist presentation
+		if (p == null) {
+			throw new Exception("PresentId not found");
+		}
+		// Set public true and group null
+		p.setGroup(null);
+		System.out.println("update:" + updatePresent.isPublic());
+		p.setPublic(updatePresent.isPublic());
+
+		presentationService.save(p);
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Update presentation isPublic success");
+		return ResponseEntity.ok(message);
+	}
+
+	// Delete presentation
 	@DeleteMapping("/{presentId}")
 	public ResponseEntity<?> deletePresentationDetail(@PathVariable int presentId) throws Exception {
+
 		presentationService.deleteById(presentId);
 		Map<String, String> message = new HashMap<>();
 		message.put("message", "Delete presentation success");
 		return ResponseEntity.ok(message);
 	}
+	/* End API CRUD Presentation */
 
-	// API For Collaborator
+	/* API related real time */
+	// Update current slide of the presentation
+	@PostMapping("/{presentId}/{slideId}")
+	public ResponseEntity<?> updateCurrentSlide(@PathVariable int presentId, @PathVariable int slideId)
+			throws Exception {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User owner = userService.findByEmail(currentPrincipalName);
+
+		System.out.println("slideId:" + slideId);
+
+		Slide s = slideService.findById(slideId);
+		Presentation p = presentationService.findById(presentId);
+		if (s == null || p == null) {
+			throw new Exception("Slide or present id  not found");
+		}
+
+		if (s.getPresentation().getPresentId() != presentId) {
+			throw new Exception("Slide " + slideId + " not belong to present" + presentId);
+		}
+
+		p.setCurrentSlide(s);
+		presentationService.save(p);
+
+		// Call socket server
+		// request url
+		String url = socketUrl + "/presents";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		map.put("room", p.getPresentId());
+		// map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
+		//
+
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Update current slide success");
+		return ResponseEntity.ok(message);
+	}
+
+	// Update presentation in group
+	@PutMapping("/group")
+	public ResponseEntity<?> updatePresentation(@RequestBody Map<String, Integer> payload) throws Exception {
+		// Get user from access token
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String currentPrincipalName = authentication.getName();
+		User user = userService.findByEmail(currentPrincipalName);
+
+		// Get groupId and presentId
+		int groupId = payload.get("groupId");
+		int presentId = payload.get("presentId");
+
+		Presentation p = presentationService.findById(presentId);
+		Group g = groupService.findById(groupId);
+
+		if (p == null || g == null) {
+			throw new Exception("PresentId or GroupId not found");
+		}
+
+		// Check user permission
+		if (g.getUser().getUserId() != user.getUserId()) {
+			UserGroup userGroup = groupService.findByUserIdAndGroupId(user.getUserId(), groupId);
+			if (userGroup == null) {
+				throw new Exception("You don't have permission to present");
+			}
+			GroupRole role = userGroup.getGroupRole();
+			if (role.getRoleName() == "member") {
+				throw new Exception("You don't have permission to present");
+			}
+		}
+		Presentation oldPresentation = g.getPresent();
+		if (oldPresentation != null) {
+			oldPresentation.setGroup(null);
+			presentationService.save(oldPresentation);
+		}
+		g.setPresent(p);
+		p.setGroup(g);
+		p.setPublic(false);
+		presentationService.save(p);
+
+		// Call socket server
+		// request url
+		String url = socketUrl + "/groups";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		//map.put("presentation", p);
+		map.put("group", p.getGroup());
+		map.put("room", "public");
+		// map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
+		//
+
+		Map<String, String> message = new HashMap<>();
+		message.put("message", "Present presentation " + p.getPresentId() + " in group " + g.getGroupId() + " success");
+		return ResponseEntity.ok(message);
+	}
+
+	/* End API related real time */
+
+	/* API For Collaborator */
+	// Get Collaborator of one presentation
 	@GetMapping("/{presentId}/coList")
 	public ResponseEntity<?> getPresentationCoList(@PathVariable int presentId) {
 		Presentation presentation = presentationService.findById(presentId);
@@ -246,6 +291,7 @@ public class PresentationController {
 		return ResponseEntity.ok(message);
 	}
 
+	// Add Collaborator of one presentation
 	@PostMapping("/{presentId}/coList")
 	public ResponseEntity<?> addPresentationCo(@PathVariable int presentId, @RequestBody Map<String, String> payload)
 			throws Exception {
@@ -279,6 +325,7 @@ public class PresentationController {
 
 	}
 
+	// Delete Collaborator of one presentation
 	@DeleteMapping("/{presentId}/coList/{userId}")
 	public ResponseEntity<?> removePresentationCo(@PathVariable int presentId, @PathVariable int userId)
 			throws Exception {
@@ -294,5 +341,6 @@ public class PresentationController {
 		message.put("message", "Remove colaborator ok");
 		return ResponseEntity.ok(message);
 	}
+	/* End API For Collaborator */
 
 }

@@ -13,11 +13,8 @@ function PresentationEdit() {
     const handle = useFullScreenHandle();
     const params = useParams();
 
-    // Socker
-    const { isConnected, socketResponse, sendData } = useSocket(
-        `present${params.presentId}`,
-        "khai"
-    );
+    // Socket
+    const { socketResponse } = useSocket(`present${params.presentId}`, "khai");
     // Select present type: public, not presenting or group
     const [presentType, setPresentType] = useState();
     const [showSelectPresentType, setShowSelectPresentType] = useState(false);
@@ -61,6 +58,69 @@ function PresentationEdit() {
 
     // Initial call
     useEffect(() => {
+        // Call api group information
+        async function callApiPresentDetail() {
+            const presentId = params.presentId;
+            const accessToken = localStorage.getItem("access_token");
+            const response = await axios.get(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}`,
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
+            );
+
+            if (response.status === 200) {
+                let newPresentDetail = { ...response.data.presentation };
+                newPresentDetail.slideList.sort(
+                    (a, b) => a.slideId - b.slideId
+                );
+                newPresentDetail.slideList[0]?.optionList?.sort(
+                    (a, b) => a.optionId - b.optionId
+                );
+                setPresentDetail({
+                    ...newPresentDetail,
+                });
+                newPresentDetail.currentSlide?.optionList.sort(
+                    (a, b) => a.optionId - b.optionId
+                );
+                setCurrentSlide(newPresentDetail.currentSlide);
+                console.log(newPresentDetail);
+                let groupPresent =
+                    response.data.group !== null
+                        ? { ...response.data.group }
+                        : null;
+                console.log("groupPresent", groupPresent);
+                let newPresentType = newPresentDetail.public
+                    ? "Public"
+                    : groupPresent !== null && groupPresent !== undefined
+                    ? `Group ${groupPresent.groupName}`
+                    : "Not presenting";
+                setPresentType(newPresentType);
+            }
+            setIsLoading(false);
+        }
+
+        // Get present detail
+        async function getPresentDetail() {
+            const presentId = params.presentId;
+            let accessToken = localStorage.getItem("access_token");
+            if (accessToken == null) {
+                navigate("/login");
+            }
+            if (presentId == null || presentId.trim().length <= 0) {
+                return;
+            }
+            try {
+                await callApiPresentDetail();
+            } catch (error) {
+                try {
+                    await refreshAccessToken();
+                } catch (error) {
+                    navigate("/login");
+                }
+                await callApiPresentDetail();
+            }
+        }
         getPresentDetail();
     }, [params.presentId, navigate]);
 
@@ -76,7 +136,7 @@ function PresentationEdit() {
         if (response.status === 200) {
             let newSlideDetail = response.data.slide;
             console.log("newslide: ", newSlideDetail);
-            newSlideDetail.optionList.sort((a, b) => a.optionId - b.optionId);
+            newSlideDetail?.optionList.sort((a, b) => a.optionId - b.optionId);
             setCurrentSlide(newSlideDetail);
         }
     }
@@ -116,7 +176,6 @@ function PresentationEdit() {
     // When socket resposne change
     useEffect(() => {
         setCurrentSlide((pre) => {
-            console.log(presentDetail);
             // if (socketResponse?.slide) {
             //     return socketResponse?.slide;
             // }
@@ -169,64 +228,6 @@ function PresentationEdit() {
     //     });
 
     // };
-
-    // Call api group information
-    async function callApiPresentDetail() {
-        const presentId = params.presentId;
-        const accessToken = localStorage.getItem("access_token");
-        const response = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}`,
-            {
-                headers: { Authorization: "Bearer " + accessToken },
-            }
-        );
-
-        if (response.status === 200) {
-            let newPresentDetail = { ...response.data.presentation };
-            newPresentDetail.slideList.sort((a, b) => a.slideId - b.slideId);
-            newPresentDetail.slideList[0]?.optionList?.sort(
-                (a, b) => a.optionId - b.optionId
-            );
-            setPresentDetail({
-                ...newPresentDetail,
-            });
-            newPresentDetail.currentSlide.optionList.sort(
-                (a, b) => a.optionId - b.optionId
-            );
-            setCurrentSlide(newPresentDetail.currentSlide);
-            console.log(newPresentDetail);
-            let newPresentType = newPresentDetail.public
-                ? "Public"
-                : newPresentDetail?.group !== null &&
-                  newPresentDetail?.group !== undefined
-                ? `Group ${newPresentDetail.group}`
-                : "Not presenting";
-            setPresentType(newPresentType);
-        }
-        setIsLoading(false);
-    }
-
-    // Get present detail
-    async function getPresentDetail() {
-        const presentId = params.presentId;
-        let accessToken = localStorage.getItem("access_token");
-        if (accessToken == null) {
-            navigate("/login");
-        }
-        if (presentId == null || presentId.trim().length <= 0) {
-            return;
-        }
-        try {
-            await callApiPresentDetail();
-        } catch (error) {
-            try {
-                await refreshAccessToken();
-            } catch (error) {
-                navigate("/login");
-            }
-            await callApiPresentDetail();
-        }
-    }
 
     const onSlideQuestionChange = (e) => {
         //setSlideQuestion(e.target.value);
@@ -284,12 +285,6 @@ function PresentationEdit() {
     };
 
     const handleRemoveOption = (index) => {
-        // setChartData(prevState => {
-        //     let newState = [...prevState]
-        //     newState.splice(index, 1)
-        //     return newState
-
-        // })
         setCurrentSlide((prev) => {
             var newOptionList = [...prev.optionList];
             newOptionList.splice(index, 1);
@@ -301,16 +296,6 @@ function PresentationEdit() {
     };
 
     const onChartDataChange = (e, index) => {
-        // setChartData(prevState => {
-        //     var newState = [...prevState]
-        //     newState[index] = {
-        //         optionName: e.target.value,
-        //         vote: prevState[index].vote
-        //     }
-        //     return [
-        //         ...newState
-        //     ]
-        // })
         setCurrentSlide((prev) => {
             var newOptionList = [...prev.optionList];
             newOptionList[index] = {
@@ -328,8 +313,6 @@ function PresentationEdit() {
     const onChangeSlide = async (slideIndex, slideId) => {
         await getSlideDetail(slideId);
         await updateCurrentSlide(slideId);
-        // console.log("new slide in change:", newSlide);
-        // setCurrentSlide(newSlide)
     };
 
     const callApiCreateNewSlide = async (typeName) => {
@@ -358,6 +341,7 @@ function PresentationEdit() {
         }
         setShowSlideType(false);
     };
+
     const handleAddNewSlide = async (e, typeName) => {
         let accessToken = localStorage.getItem("access_token");
         console.log("typeName: ", typeName);
@@ -802,29 +786,6 @@ function PresentationEdit() {
     //     }
     // };
 
-    const handleCallApi = async (e, callback, ...rest) => {
-        console.log("rest:", rest);
-        let accessToken = localStorage.getItem("access_token");
-        if (accessToken == null) {
-            navigate("/login");
-        }
-
-        try {
-            e.target.disabled = true;
-            await callback(rest[0]);
-            e.target.disabled = false;
-        } catch (error) {
-            try {
-                await refreshAccessToken();
-            } catch (error) {
-                navigate("/login");
-            }
-            await callback(rest[0]);
-        } finally {
-            e.target.disabled = false;
-        }
-    };
-
     const callApiGetListGroup = async () => {
         let accessToken = localStorage.getItem("access_token");
         const response = await axios.get(
@@ -846,10 +807,53 @@ function PresentationEdit() {
         setShowGroupToPresent(true);
     };
 
+    const callApiUpdateGroupPresent = async (groupId) => {
+        let accessToken = localStorage.getItem("access_token");
+        if (accessToken === undefined) {
+            return;
+        }
+        await axios.put(
+            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/group`,
+            {
+                presentId: presentDetail.presentId,
+                groupId: groupId,
+            },
+            {
+                headers: { Authorization: "Bearer " + accessToken },
+            }
+        );
+        setPresentType(`Group ${groupId}`);
+        setShowSelectPresentType(false);
+    };
+
     const handlePresentInGroup = async (groupId) => {
         console.log("groupId", groupId);
+        await callApiUpdateGroupPresent(groupId);
         setShowGroupToPresent(false);
         setShowSelectPresentType(false);
+    };
+
+    const handleCallApi = async (e, callback, ...rest) => {
+        console.log("rest:", rest);
+        let accessToken = localStorage.getItem("access_token");
+        if (accessToken == null) {
+            navigate("/login");
+        }
+
+        try {
+            e.target.disabled = true;
+            await callback(rest[0]);
+            e.target.disabled = false;
+        } catch (error) {
+            try {
+                await refreshAccessToken();
+            } catch (error) {
+                navigate("/login");
+            }
+            await callback(rest[0]);
+        } finally {
+            e.target.disabled = false;
+        }
     };
 
     return (
@@ -1087,9 +1091,9 @@ function PresentationEdit() {
                             })}
                     </ul>
                 </div>
-                {currentSlide.typeName === "multiple" && multipleSlide}
-                {currentSlide.typeName === "heading" && headingSlide}
-                {currentSlide.typeName === "paragraph" && paragraphSlide}
+                {currentSlide?.typeName === "multiple" && multipleSlide}
+                {currentSlide?.typeName === "heading" && headingSlide}
+                {currentSlide?.typeName === "paragraph" && paragraphSlide}
             </div>
         </div>
     );

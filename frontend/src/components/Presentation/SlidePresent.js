@@ -5,6 +5,7 @@ import ReactLoading from "react-loading";
 import axios from "axios";
 import { useSocket } from "../customHook/useSocket";
 import { v4 as uuidv4 } from "uuid";
+import landingImg from "../../landing-page-img.jpeg";
 function SlidePresent() {
     const params = useParams();
     const { isConnected, socketResponse, sendData } = useSocket(
@@ -95,42 +96,61 @@ function SlidePresent() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isPublic, setIsPublic] = useState(false);
+    const [isMember, setIsMember] = useState(false);
+    const [presentDetail, setPresentDetail] = useState({
+        group: null,
+        public: false,
+    });
     const [answer, setAnswer] = useState({
         optionName: "",
         optionId: "",
     });
     const navigate = useNavigate();
-    // Call api group information
-    async function callApiSlideDetail() {
-        const presentId = params.presentId;
-        const response = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/presents/vote/${presentId}`
-        );
-
-        if (response.status === 200) {
-            let newSlideDetail = response.data.presentation.currentSlide;
-            newSlideDetail.optionList.sort((a, b) => a.optionId - b.optionId);
-            setSlideDetail(newSlideDetail);
-            setIsPublic(response.data.presentation?.public);
-        }
-        setIsLoading(false);
-    }
-    // Get group info, do some validate
-    async function getSlideDetail() {
-        const presentId = params.presentId;
-
-        if (presentId == null || presentId.trim().length <= 0) {
-            return;
-        }
-        try {
-            await callApiSlideDetail();
-        } catch (error) {
-            await callApiSlideDetail();
-        }
-    }
 
     useEffect(() => {
         console.log(socketResponse);
+        // Call api group information
+        async function callApiSlideDetail() {
+            const presentId = params.presentId;
+            const response = await axios.get(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/vote/${presentId}`
+            );
+
+            if (response.status === 200) {
+                let present = response.data.presentation;
+                if (!present.public) {
+                    const group = response.data.group;
+                    if (group !== null && group?.groupId !== null) {
+                        // call api check user in group
+                        const checkMember = await callApiIsMember(
+                            group.groupId
+                        );
+                        setIsMember(Boolean(checkMember));
+                    }
+                }
+                let newSlideDetail = present.currentSlide;
+                newSlideDetail.optionList.sort(
+                    (a, b) => a.optionId - b.optionId
+                );
+                setPresentDetail(present);
+                setSlideDetail(newSlideDetail);
+                setIsPublic(present?.public);
+            }
+            setIsLoading(false);
+        }
+        // Get group info, do some validate
+        async function getSlideDetail() {
+            const presentId = params.presentId;
+
+            if (presentId == null || presentId.trim().length <= 0) {
+                return;
+            }
+            try {
+                await callApiSlideDetail();
+            } catch (error) {
+                await callApiSlideDetail();
+            }
+        }
         getSlideDetail();
     }, [socketResponse, params.slideId, navigate]);
 
@@ -158,6 +178,26 @@ function SlidePresent() {
     //     }
     // }
 
+    async function callApiIsMember(groupId) {
+        const accessToken = localStorage.getItem("access_token");
+        if (accessToken === null || accessToken === undefined) {
+            setIsLoading(false);
+            return false;
+        }
+        const response = await axios.get(
+            `${process.env.REACT_APP_API_ENDPOINT}/api/groups/${groupId}/isMember`,
+            {
+                headers: { Authorization: "Bearer " + accessToken },
+            }
+        );
+
+        let isMember = false;
+        if (response.status === 200) {
+            isMember = response.data.isMember;
+        }
+        setIsLoading(false);
+        return isMember;
+    }
     const handleSubmitForm = async (e) => {
         e.preventDefault();
         // console.log({
@@ -205,9 +245,36 @@ function SlidePresent() {
         );
     }
 
-    if (!isPublic) {
-        return <div>Present is not presenting</div>;
+    if (!presentDetail?.public) {
+        if (presentDetail?.group === null) {
+            return (
+                <div className="relative mx-auto max-w-[72vw] h-screen ">
+                    <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
+                        Present is not presenting
+                    </div>
+                    <img
+                        src={landingImg}
+                        className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
+                        alt="Slide presentation"
+                    />
+                </div>
+            );
+        } else if (!isMember) {
+            return (
+                <div className="relative mx-auto max-w-[72vw] h-screen ">
+                    <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
+                        You don't have permission to access this presentation
+                    </div>
+                    <img
+                        src={landingImg}
+                        className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
+                        alt="Slide presentation"
+                    />
+                </div>
+            );
+        }
     }
+
     return (
         <div>
             <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">

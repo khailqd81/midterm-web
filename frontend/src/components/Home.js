@@ -8,14 +8,38 @@ import { refreshAccessToken } from "./utils/auth";
 import ReactLoading from "react-loading";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSocket } from "./customHook/useSocket";
 
 function Home() {
     const navigate = useNavigate();
+    const { socketResponse } = useSocket("public", "khai");
     const [groupName, setGroupName] = useState(""); // input groupName value
     const [ownerGroup, setOwnerGroup] = useState([]);
     const [memberGroup, setMemberGroup] = useState([]);
     const [refreshPage, setRefreshPage] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        console.log(socketResponse);
+        if (socketResponse?.room === "public") {
+            const groupId = socketResponse.groupId;
+            let group = ownerGroup.find((g) => g.groupId === groupId);
+            if (group === undefined) {
+                group = memberGroup.find((g) => g.groupId === groupId);
+                if (group === undefined) {
+                    return;
+                }
+            }
+            const presentName = socketResponse.present.presentName;
+            const groupName = socketResponse.groupName;
+            toast.info(`Presenting ${presentName} in group ${groupName}`, {
+                autoClose: false,
+                style: {
+                    marginTop: "50px",
+                },
+            });
+        }
+    }, [socketResponse, ownerGroup, memberGroup]);
 
     const callApiGetListGroup = async () => {
         let accessToken = localStorage.getItem("access_token");
