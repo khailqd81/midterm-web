@@ -51,7 +51,7 @@ export const useSocket = (room, username) => {
         });
 
         s.on("connect", () => {
-            console.log("connect success");
+            console.log(`connect success ${room}`);
             setIsConnected(true);
         });
         setSocket(s);

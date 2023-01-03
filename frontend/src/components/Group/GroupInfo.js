@@ -17,6 +17,9 @@ export default function GroupInfo() {
     /* Component State */
     const [inviteMail, setInviteMail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    // Answer list
+    const [answerList, setAnswerList] = useState([]);
+    const [userRole, setUserRole] = useState("member");
     const [inviteMailMessage, setInviteMailMessage] = useState("");
     const [showInviteBox, setShowInviteBox] = useState(false);
     const [showSendMailResult, setShowSendMailResult] = useState(false);
@@ -28,21 +31,41 @@ export default function GroupInfo() {
         groupLink: "",
         present: null,
     });
-    const { socketResponse } = useSocket(
-        `present${groupInfo.present?.presentId}`,
-        "khai"
-    );
+    const { socketResponse } = useSocket(`group${groupInfo.groupId}`, "khai");
     const [groupOwner, setGroupOwner] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     /**/
     const navigate = useNavigate();
     const params = useParams();
     useEffect(() => {
-        console.log(socketResponse);
+        console.log("Group Info: ", socketResponse);
+        // If stop presenting
+        if (
+            socketResponse === null ||
+            Object.keys(socketResponse).length === 0
+        ) {
+            setGroupInfo((prev) => {
+                return {
+                    ...prev,
+                    present: null,
+                };
+            });
+            return;
+        }
+        let newSlideDetail = socketResponse?.currentSlide;
+        newSlideDetail?.optionList.sort((a, b) => a.optionId - b.optionId);
+        let userAnswer = socketResponse?.userAnswer;
+        if (userAnswer !== null && Object.keys(socketResponse).length > 0) {
+            setAnswerList((prev) => {
+                let newAnswerList = [...prev];
+                newAnswerList.unshift(userAnswer);
+                return newAnswerList;
+            });
+        }
         setGroupInfo((prev) => {
             return {
                 ...prev,
-                present: { ...socketResponse },
+                present: { ...socketResponse, currentSlide: newSlideDetail },
             };
         });
     }, [socketResponse]);
@@ -98,8 +121,37 @@ export default function GroupInfo() {
             console.log(
                 response.data.members.filter((m) => m.role !== "owner")
             );
+            let index = response.data.members.findIndex(
+                (m) =>
+                    (m.role === "owner" || m.role === "co-owner") &&
+                    m.user.userId.toString() ===
+                        localStorage.getItem("userId").toString()
+            );
+            let present = response.data.present;
+            if (present !== null) {
+                let newSlideDetail = present.currentSlide;
+                if (present.currentSlide !== null && index !== -1) {
+                    let userAnswerResponse = await axios.get(
+                        `${process.env.REACT_APP_API_ENDPOINT}/api/slides/${present.currentSlide.slideId}/answers`,
+                        {
+                            headers: { Authorization: "Bearer " + accessToken },
+                        }
+                    );
+                    let answerList = userAnswerResponse.data.answerList;
+                    if (answerList !== null && answerList.length > 0) {
+                        answerList.sort((a, b) => b.createdAt - a.createdAt);
+                    }
+                    setAnswerList(answerList);
+                }
+
+                newSlideDetail?.optionList.sort(
+                    (a, b) => a.optionId - b.optionId
+                );
+                present.currentSlide = newSlideDetail;
+            }
             setGroupInfo({
                 ...response.data,
+                present,
                 members: response.data.members.filter(
                     (m) => m.role !== "owner"
                 ),
@@ -151,7 +203,7 @@ export default function GroupInfo() {
         const groupId = params.groupId;
         let accessToken = localStorage.getItem("access_token");
         if (accessToken == null) {
-            navigate("/login");
+            navigate("/");
         }
         if (groupId == null || groupId.trim().length <= 0) {
             return;
@@ -161,10 +213,10 @@ export default function GroupInfo() {
         } catch (error) {
             try {
                 await refreshAccessToken();
-                await callApiGroupInfo();
             } catch (error) {
-                navigate("/login");
+                navigate("/");
             }
+            await callApiGroupInfo();
         }
     }
 
@@ -404,7 +456,7 @@ export default function GroupInfo() {
                 </div>
                 <p className="text-red-500 text-sm">{errorMessage}</p>
             </div>
-            {groupInfo.present !== null && (
+            {groupInfo?.present !== null && (
                 <div>
                     <div className="font-bold text-2xl mb-2">
                         Presenting Presentation
@@ -422,37 +474,69 @@ export default function GroupInfo() {
                             <span className="font-bold mr-2">
                                 Created By:
                             </span>{" "}
-                            {groupInfo.present?.user.firstName}
+                            {groupInfo.present?.user?.firstName}
                         </div>
                     </div>
-                    <div
-                        className="mt-4 text-center border px-8 py-6 shadow-lg hover:shadow-xl hover:border-sky-400 cursor-pointer rounded-lg max-w-[10vw] uppercase"
-                        onClick={() =>
-                            navigate(
-                                `/home/presentation/${groupInfo.present?.presentId}/vote`
-                            )
-                        }
-                    >
+                    {/* <div className="mt-4 text-center border px-8 py-6 shadow-lg hover:shadow-xl hover:border-sky-400 cursor-pointer rounded-lg max-w-[10vw] uppercase">
                         {groupInfo.present?.currentSlide?.typeName}
-                    </div>
-                    <div className="flex justify-center my-4">
-                        <BarChart
-                            className="shadow-xl rounded-lg"
-                            width={740}
-                            height={250}
-                            data={groupInfo.present?.currentSlide?.optionList}
-                            margin={{
-                                top: 20,
-                                right: 30,
-                                left: 20,
-                                bottom: 20,
-                            }}
+                    </div> */}
+                    <div className="flex flex-wrap justify-center my-4">
+                        <div
+                            className="flex flex-col pt-4 shadow-xl rounded-lg hover:shadow-2xl cursor-pointer mb-4"
+                            onClick={() =>
+                                navigate(
+                                    `/home/presentation/${groupInfo.present?.presentId}/vote`
+                                )
+                            }
                         >
-                            <XAxis dataKey="optionName" />
-                            <Bar dataKey="vote" fill="#8884d8">
-                                <LabelList dataKey="vote" position="top" />
-                            </Bar>
-                        </BarChart>
+                            <div className="font-bold ml-4">
+                                {groupInfo.present?.currentSlide?.heading}
+                            </div>
+                            <BarChart
+                                cursor="pointer"
+                                width={740}
+                                height={250}
+                                data={
+                                    groupInfo.present?.currentSlide?.optionList
+                                }
+                                margin={{
+                                    top: 20,
+                                    right: 30,
+                                    left: 20,
+                                    bottom: 20,
+                                }}
+                            >
+                                <XAxis dataKey="optionName" />
+                                <Bar dataKey="vote" fill="#8884d8">
+                                    <LabelList dataKey="vote" position="top" />
+                                </Bar>
+                            </BarChart>
+                        </div>
+
+                        {answerList !== null && answerList.length > 0 && (
+                            <ul className="ml-4 max-h-[200px] overflow-y-scroll ">
+                                <span className="font-bold">Answer list:</span>
+
+                                {answerList.map((an) => {
+                                    return (
+                                        <li
+                                            key={an.answerId}
+                                            className="flex justify-between border px-4 py-1 shadow my-1 rounded-lg italic"
+                                        >
+                                            <span>{an.option.optionName}</span>
+                                            <span className="mx-2">
+                                                {an.user.firstName}
+                                            </span>
+                                            <span>
+                                                {new Date(
+                                                    an.createdAt
+                                                ).toLocaleString()}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
                     </div>
                 </div>
             )}

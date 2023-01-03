@@ -1,11 +1,20 @@
 var socketIoObject = require("../app.js");
 
 module.exports.handleSlideVote = (req, res, next) => {
-  // console.log("Req body (in slidevote): ", req.body);
-  var room = "present" + req.body.room;
-  console.log("Slide controller room:", room);
-  socketIoObject.socketIo.to(room).emit("read_message", {
+  var present = req.body.presentation;
+  var userAnswer = req.body.userAnswer;
+  var presentRoom = "present" + present.presentId;
+  socketIoObject.socketIo.to(presentRoom).emit("read_message", {
     ...req.body.presentation,
+    userAnswer,
   });
+  var group = req.body.group;
+  if (group !== null) {
+    var groupRoom = "group" + group.groupId;
+    socketIoObject.socketIo.to(groupRoom).emit("read_message", {
+      ...req.body.presentation,
+      userAnswer,
+    });
+  }
   res.json({ vote: "ok" });
 };

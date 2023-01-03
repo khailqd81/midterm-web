@@ -159,6 +159,11 @@ public class GroupServiceImpl implements GroupService {
 		g.setDeleted(true);
 		groupRepository.save(g);
 	}
+
+	@Override
+	public void save(Group g) {
+		groupRepository.save(g);
+	}
 	
 	
 

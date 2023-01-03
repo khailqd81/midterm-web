@@ -147,11 +147,32 @@ public class PresentationController {
 			throw new Exception("PresentId not found");
 		}
 		// Set public true and group null
+		Group oldGroup = p.getGroup();
 		p.setGroup(null);
 		System.out.println("update:" + updatePresent.isPublic());
 		p.setPublic(updatePresent.isPublic());
 
 		presentationService.save(p);
+		
+		// Call socket server
+		// request url
+		String url = socketUrl + "/presents";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		map.put("group", null);
+		map.put("oldGroup", oldGroup);
+		map.put("room", p.getPresentId());
+		// map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
+		//
+		
 		Map<String, String> message = new HashMap<>();
 		message.put("message", "Update presentation isPublic success");
 		return ResponseEntity.ok(message);
@@ -203,6 +224,7 @@ public class PresentationController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
+		map.put("group", p.getGroup());
 		map.put("room", p.getPresentId());
 		// map.put("room", p.getPresentId());
 
@@ -250,6 +272,12 @@ public class PresentationController {
 			oldPresentation.setGroup(null);
 			presentationService.save(oldPresentation);
 		}
+		
+		Group oldGroup = p.getGroup();
+		if (oldGroup != null) {
+			oldGroup.setPresent(null);
+			groupService.save(oldGroup);
+		}
 		g.setPresent(p);
 		p.setGroup(g);
 		p.setPublic(false);
@@ -264,8 +292,9 @@ public class PresentationController {
 
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
-		//map.put("presentation", p);
+		map.put("presentation", p);
 		map.put("group", p.getGroup());
+		map.put("oldGroup", oldGroup);
 		map.put("room", "public");
 		// map.put("room", p.getPresentId());
 

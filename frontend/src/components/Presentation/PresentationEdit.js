@@ -7,6 +7,7 @@ import ReactLoading from "react-loading";
 import { useSocket } from "../customHook/useSocket";
 import { toast } from "react-toastify";
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
+import { BsCheckLg } from "react-icons/bs";
 
 function PresentationEdit() {
     // Fullscreen mode with react-full-screen
@@ -33,12 +34,18 @@ function PresentationEdit() {
     });
     // Current slide detail
     const [currentSlide, setCurrentSlide] = useState({
-        slideId: "",
+        slideId: -1,
         heading: "",
         subHeading: "",
         paragraph: "",
         optionList: [],
     });
+
+    // Answer list
+    const [answerList, setAnswerList] = useState([]);
+    // Question
+    const [questionList, setQuestionList] = useState([]);
+
     const [fullScreenMode, setFullScreenMode] = useState(false);
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +130,51 @@ function PresentationEdit() {
         }
         getPresentDetail();
     }, [params.presentId, navigate]);
+
+    useEffect(() => {
+        // Call api group information
+        async function callApiUserAnswerList() {
+            const accessToken = localStorage.getItem("access_token");
+            const response = await axios.get(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/slides/${currentSlide.slideId}/answers`,
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
+            );
+
+            if (response.status === 200) {
+                let answerList = response.data.answerList;
+                console.log("answerList: ", answerList);
+                if (answerList !== null && answerList.length > 0) {
+                    answerList.sort((a, b) => b.createdAt - a.createdAt);
+                }
+                setAnswerList(answerList);
+            }
+            setIsLoading(false);
+        }
+
+        // Get present detail
+        async function getUserAnswerList() {
+            let accessToken = localStorage.getItem("access_token");
+            if (accessToken === null) {
+                return;
+            }
+            if (currentSlide === null || currentSlide?.slideId < 0) {
+                return;
+            }
+            try {
+                await callApiUserAnswerList();
+            } catch (error) {
+                try {
+                    await refreshAccessToken();
+                } catch (error) {
+                    console.log(error);
+                }
+                await callApiUserAnswerList();
+            }
+        }
+        getUserAnswerList();
+    }, [currentSlide]);
 
     async function callApiSlideDetail(slideId) {
         const accessToken = localStorage.getItem("access_token");
@@ -515,7 +567,7 @@ function PresentationEdit() {
 
     const multipleSlide = (
         <>
-            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh]">
+            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[80vh]">
                 <FullScreen handle={handle}>
                     <div className="border flex flex-col justify-center h-full bg-white full-screenable-node ">
                         <div className="mt-8 ml-4 mb-4 text-xl font-bold">
@@ -544,6 +596,34 @@ function PresentationEdit() {
                                 </BarChart>
                             </div>
                         )}
+                        <div>
+                            <ul className="h-[142px] overflow-scroll py-2 px-8">
+                                <span className="italic mb-4">
+                                    Answer submitted:
+                                </span>
+
+                                {answerList !== null &&
+                                    answerList.length > 0 &&
+                                    answerList.map((an) => {
+                                        return (
+                                            <li
+                                                key={an.answerId}
+                                                className="flex justify-between border px-4 py-1 shadowd rounded-lg"
+                                            >
+                                                <span>
+                                                    {an.option.optionName}
+                                                </span>
+                                                <span>{an.user.firstName}</span>
+                                                <span>
+                                                    {new Date(an.createdAt)
+                                                        .toString()
+                                                        .slice(0, 24)}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                            </ul>
+                        </div>
                     </div>
                 </FullScreen>
                 {currentSlide?.slideId && (
@@ -1048,17 +1128,21 @@ function PresentationEdit() {
                     <ul>
                         {presentDetail?.slideList.length > 0 &&
                             presentDetail.slideList.map((slide, index) => {
+                                if (slide === undefined) {
+                                    return <li></li>;
+                                }
+                                console.log("slide", { slide });
                                 return (
                                     <li
                                         className="flex mt-2 flex-col"
-                                        key={slide.slideId}
+                                        key={slide?.slideId}
                                         onClick={(e) =>
                                             onChangeSlide(index, slide?.slideId)
                                         }
                                     >
                                         <div className="flex">
                                             <p>{index + 1}</p>
-                                            {slide.slideId ===
+                                            {slide?.slideId ===
                                             currentSlide.slideId ? (
                                                 <div className="flex flex-col justify-center bg-white border border-black cursor-pointer h-24 w-40 rounded-lg shadow ml-2">
                                                     <p className="text-xs text-center">

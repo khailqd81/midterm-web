@@ -14,6 +14,7 @@ public interface GroupService {
 	public boolean saveMember(int userId, int groupId, String role);
 	public void saveUserGroup(UserGroup userGroup);
 	public void createGroup(GroupDto g);
+	public void save(Group g);
 	public void sendInviteLink(String toAddress, int groupId)  throws Exception;
 	public UserGroup findByUserIdAndGroupId(int userId, int groupId);
 	public void deleteMember(int userId, int groupId);

@@ -1,6 +1,7 @@
 package com.web.midterm.controller;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.yaml.snakeyaml.util.ArrayUtils;
 
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
@@ -163,7 +165,8 @@ public class SlideController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", presentation);
-		map.put("room", presentation.getPresentId());
+		map.put("group", presentation.getGroup());
+		//map.put("room", presentation.getPresentId());
 		// map.put("room", p.getPresentId());
 
 		// send POST request
@@ -260,13 +263,34 @@ public class SlideController {
 		message.put("slide", slide);
 		return ResponseEntity.ok(message);
 	}
-
-	@PostMapping("/vote/{slideId}")
-	public ResponseEntity<?> updateSlideVote(@PathVariable int slideId, @RequestBody Map<String, String> payload) throws Exception {
+	
+	@GetMapping("/{slideId}/answers")
+	public ResponseEntity<?> getSlideAnswerList(@PathVariable int slideId) throws Exception {
 		// Get user from access token
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //		String currentPrincipalName = authentication.getName();
 //		User user = userService.findByEmail(currentPrincipalName);
+
+		Slide slide = slideService.findById(slideId);
+		if (slide == null) {
+			throw new Exception("Slide Id not found");
+		}
+		
+		List<Option> optionList = slide.getOptionList();
+		List<UserAnswer> userAnswerList = new ArrayList<>();
+		if (optionList != null && optionList.size() > 0) {
+			for (Option opt : optionList) {
+				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+				userAnswerList.addAll(optAnswer);
+			}
+		}
+		Map<String, List<UserAnswer>> message = new HashMap<>();
+		message.put("answerList", userAnswerList);
+		return ResponseEntity.ok(message);
+	}
+	
+	@PostMapping("/vote/{slideId}")
+	public ResponseEntity<?> updateSlideVote(@PathVariable int slideId, @RequestBody Map<String, String> payload) throws Exception {
 		String userIdStr = payload.get("userId");
 		User user = null;
 		if (userIdStr != null) {
@@ -310,6 +334,8 @@ public class SlideController {
 		Presentation presentation = slide.getPresentation();
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", presentation);
+		map.put("group", presentation.getGroup());
+		map.put("userAnswer", userAnswer);
 		map.put("room", presentation.getPresentId());
 		// map.put("room", p.getPresentId());
 
