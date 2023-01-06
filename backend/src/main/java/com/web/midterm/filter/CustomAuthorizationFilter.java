@@ -40,7 +40,9 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				|| request.getServletPath().equals("/api/user/confirm")
 				|| request.getServletPath().equals("/api/user/refreshToken")
 				|| request.getServletPath().contains("/api/presents/vote")
-				|| request.getServletPath().contains("/api/slides/vote")) {
+				|| request.getServletPath().contains("/api/slides/vote")
+				|| request.getServletPath().contains("/api/chats/public")
+				|| request.getServletPath().contains("/api/questions/public")) {
 			filterChain.doFilter(request, response);
 		} else {
 			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);

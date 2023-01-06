@@ -1,5 +1,6 @@
 package com.web.midterm.controller;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -23,13 +24,16 @@ import org.springframework.web.client.RestTemplate;
 
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.GroupRole;
+import com.web.midterm.entity.Option;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.Slide;
 import com.web.midterm.entity.User;
+import com.web.midterm.entity.UserAnswer;
 import com.web.midterm.entity.UserGroup;
 import com.web.midterm.service.GroupService;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
+import com.web.midterm.service.UserAnswerService;
 import com.web.midterm.service.UserService;
 
 @RestController
@@ -39,6 +43,8 @@ public class PresentationController {
 	private UserService userService;
 	@Autowired
 	private GroupService groupService;
+	@Autowired
+	private UserAnswerService userAnswerService;
 	@Autowired
 	private PresentationService presentationService;
 	@Autowired
@@ -107,33 +113,83 @@ public class PresentationController {
 	// Get one presentation
 	@GetMapping("/{presentId}")
 	public ResponseEntity<?> getPresentationDetail(@PathVariable int presentId) throws Exception {
-		// Get user from access token
-//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//		String currentPrincipalName = authentication.getName();
-//		User user = userService.findByEmail(currentPrincipalName);
-
 		Presentation presentation = presentationService.findById(presentId);
 		if (presentation == null) {
 			throw new Exception("Presentation id not found");
 		}
 		Map<String, Object> message = new HashMap<>();
 		message.put("presentation", presentation);
-		message.put("group", presentation.getGroup());
+		Group presentGroup = presentation.getGroup();
+		if (presentGroup != null) {
+			presentGroup.setPresent(null);
+		}
+		message.put("group", presentGroup);
 		return ResponseEntity.ok(message);
 	}
-
+	
+	// Get one presentation
+	@GetMapping("/{presentId}/group")
+	public ResponseEntity<?> getPresentationDetailVoteGroup(@PathVariable int presentId) throws Exception {
+		Presentation p = presentationService.findById(presentId);
+		if (p == null || p.isDeleted()) {
+			throw new Exception("Presentation id not found");
+		}
+		// Check user is member of the group
+		User user = userService.getCurrentAuthUser();
+		Group g = p.getGroup();
+		if (g== null) {
+			throw new Exception("Presentation is not presenting");
+		}
+		if (g != null) {
+			UserGroup userGroup = groupService.findByUserIdAndGroupId(user.getUserId(), g.getGroupId());
+			if (userGroup == null) {
+				throw new Exception("You don't have permission to access this presentation");
+			}
+		}
+		
+		// Get answerList of the current slide
+		List<UserAnswer> answerList = new ArrayList<>();
+		List<Option> optionList = p.getCurrentSlide().getOptionList();
+		if (optionList != null && optionList.size() > 0) {
+			for (Option opt : optionList) {
+				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+				answerList.addAll(optAnswer);
+			}
+		}
+		
+		Map<String, Object> message = new HashMap<>();
+		message.put("presentation", p);
+		message.put("answerList", answerList);
+		message.put("group", p.getGroup());
+		return ResponseEntity.ok(message);
+	}
 	// Get presentation detail for vote page
 	@GetMapping("/vote/{presentId}")
 	public ResponseEntity<?> getPresentationDetailForVote(@PathVariable int presentId) throws Exception {
 		// Get user from access token
 
-		Presentation presentation = presentationService.findById(presentId);
-		if (presentation == null) {
-			throw new Exception("Presentation id not found");
+		Presentation p = presentationService.findById(presentId);
+		if (p == null || p.isDeleted()) {
+			throw new Exception("Presentation Id not found");
 		}
+		if (!p.isPublic()) {
+			throw new Exception("Presentation is not presenting in public");
+		}
+		
+		// Get answerList of the current slide
+		List<UserAnswer> answerList = new ArrayList<>();
+		List<Option> optionList = p.getCurrentSlide().getOptionList();
+		if (optionList != null && optionList.size() > 0) {
+			for (Option opt : optionList) {
+				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+				answerList.addAll(optAnswer);
+			}
+		}
+		
 		Map<String, Object> message = new HashMap<>();
-		message.put("presentation", presentation);
-		message.put("group", presentation.getGroup());
+		message.put("presentation", p);
+		message.put("group", p.getGroup());
+		message.put("answerList", answerList);
 		return ResponseEntity.ok(message);
 	}
 

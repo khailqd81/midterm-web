@@ -32,7 +32,7 @@ public class Question {
 	@JoinColumn(name = "user_id")
 	private User user;
 	
-	@Column(name = "createdAt")
+	@Column(name = "createdat")
 	private Date createdAt;
 	
 	@ManyToOne(cascade = { CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH })
@@ -47,5 +47,5 @@ public class Question {
 	private int vote;
 	
 	@Column(name = "is_answered")
-	private boolean isAnswered;
+	private boolean isAnswered = false;
 }

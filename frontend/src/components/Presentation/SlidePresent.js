@@ -1,17 +1,63 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { BarChart, Bar, LabelList, XAxis, ResponsiveContainer } from "recharts";
+import { BsFillChatFill, BsFillQuestionCircleFill } from "react-icons/bs";
+import { RiSurveyFill } from "react-icons/ri";
 import ReactLoading from "react-loading";
 import axios from "axios";
 import { useSocket } from "../customHook/useSocket";
-import { v4 as uuidv4 } from "uuid";
 import landingImg from "../../landing-page-img.jpeg";
+import { refreshAccessToken } from "../utils/auth";
+import InfiniteScroll from "react-infinite-scroll-component";
+
 function SlidePresent() {
     const params = useParams();
-    const { isConnected, socketResponse, sendData } = useSocket(
-        `present${params.presentId}`,
-        "khai" + uuidv4()
-    );
+    const { socketResponse } = useSocket(`present${params.presentId}`, "khai");
+    const [isLogin, setIsLogin] = useState(false);
+    const [showBox, setShowBox] = useState("");
+    const [chatList, setChatList] = useState([]);
+    const [answerList, setAnswerList] = useState([]);
+    const [hasMore, setHasMore] = useState(true);
+    const [totalPage, setTotalPage] = useState(0);
+    // Input question and message
+    const [chat, setChat] = useState("");
+    const [question, setQuestion] = useState("");
+    //
+    const [errorMessages, setErrorMessages] = useState("");
+    const [page, setPage] = useState(0);
+
+    useEffect(() => {
+        async function checkAuth() {
+            if (localStorage.getItem("access_token") === null) {
+                setIsLogin(false);
+                return;
+            }
+            try {
+                const response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/user/isauth`,
+                    {
+                        headers: {
+                            Authorization:
+                                "Bearer " +
+                                localStorage.getItem("access_token"),
+                        },
+                    }
+                );
+                if (response.status === 200) {
+                    localStorage.setItem("userId", response.data?.userId);
+                    localStorage.setItem("email", response.data?.email);
+                    localStorage.setItem("firstName", response.data?.firstName);
+                    localStorage.setItem("lastName", response.data?.lastName);
+                    setIsLogin(true);
+                }
+            } catch (error) {
+                await refreshAccessToken();
+                await checkAuth();
+            }
+        }
+        checkAuth();
+    }, []);
+
     //
 
     // const room = "public";
@@ -95,8 +141,9 @@ function SlidePresent() {
         optionList: [],
     });
     const [isLoading, setIsLoading] = useState(true);
-    const [isPublic, setIsPublic] = useState(false);
+    // const [isPublic, setIsPublic] = useState(false);
     const [isMember, setIsMember] = useState(false);
+    const [isOwner, setIsOwner] = useState(false);
     const [presentDetail, setPresentDetail] = useState({
         group: null,
         public: false,
@@ -107,36 +154,111 @@ function SlidePresent() {
     });
     const navigate = useNavigate();
 
+    function sortByDateAsc(arraySort) {
+        console.log("arraySort", arraySort);
+        const sortedData = arraySort.sort((a, b) => a.createdAt - b.createdAt);
+        let currentDay = new Date(sortedData[0].createdAt);
+        console.log("createMessagesArray", currentDay);
+
+        const stillCurrentDay = (dayOfItem) => {
+            let dayCompare = new Date(dayOfItem);
+            return (
+                dayCompare.getFullYear() === currentDay.getFullYear() &&
+                dayCompare.getMonth() === currentDay.getMonth() &&
+                dayCompare.getDate() === currentDay.getDate()
+            );
+        };
+
+        let dayMessageArray = [];
+        const fullMessageArray = [];
+
+        const createMessagesArray = (messages) => {
+            const newDay = {};
+            newDay[currentDay.toISOString().split("T")[0]] = messages;
+            fullMessageArray.push(newDay);
+        };
+
+        sortedData.forEach((message) => {
+            if (!stillCurrentDay(message.createdAt)) {
+                createMessagesArray(dayMessageArray);
+                currentDay = new Date(message.createdAt);
+                dayMessageArray = [];
+            }
+
+            dayMessageArray.push(message);
+        });
+        createMessagesArray(dayMessageArray);
+
+        console.log("sortedArray:", fullMessageArray);
+        return fullMessageArray;
+    }
     useEffect(() => {
         console.log(socketResponse);
+        // Sort data
+
         // Call api group information
         async function callApiSlideDetail() {
             const presentId = params.presentId;
-            const response = await axios.get(
-                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/vote/${presentId}`
-            );
-
-            if (response.status === 200) {
-                let present = response.data.presentation;
-                if (!present.public) {
-                    const group = response.data.group;
-                    if (group !== null && group?.groupId !== null) {
-                        // call api check user in group
-                        const checkMember = await callApiIsMember(
-                            group.groupId
-                        );
-                        setIsMember(Boolean(checkMember));
-                    }
-                }
-                let newSlideDetail = present.currentSlide;
-                newSlideDetail.optionList.sort(
-                    (a, b) => a.optionId - b.optionId
+            let response = null;
+            let isPublic = false;
+            try {
+                response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/presents/vote/${presentId}`
                 );
-                setPresentDetail(present);
-                setSlideDetail(newSlideDetail);
-                setIsPublic(present?.public);
+                isPublic = true;
+            } catch (error) {
+                // If presentation is not public then call with access token
+                const accessToken = localStorage.getItem("access_token");
+                try {
+                    response = await axios.get(
+                        `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${presentId}/group`,
+                        {
+                            headers: { Authorization: "Bearer " + accessToken },
+                        }
+                    );
+                } catch (error) {
+                    setErrorMessages(
+                        "You don't have permission to access this presentation"
+                    );
+                }
+            } finally {
+                // if (response.status !== 200) {
+                //     setIsLoading(false);
+                //     setErrorMessages(
+                //         "You don't have permission to access this presentation"
+                //     );
+                // }
+                if (response.status === 200) {
+                    let present = response.data.presentation;
+                    // if (!present.public) {
+                    //     const group = response.data.group;
+                    //     if (group !== null && group?.groupId !== null) {
+                    //         // call api check user in group
+                    //         const checkMember = await callApiIsMember(
+                    //             group.groupId
+                    //         );
+                    //         setIsMember(Boolean(checkMember));
+                    //         if (Boolean(checkMember)) {
+                    //             await callApiGetChats();
+                    //         }
+                    //     }
+                    // }
+                    await callApiGetChats(present.presentId, isPublic);
+                    let newSlideDetail = present.currentSlide;
+                    newSlideDetail.optionList.sort(
+                        (a, b) => a.optionId - b.optionId
+                    );
+                    // let sortedAnswer = [...response.data.answerList];
+                    // console.log("sortedAnswer", sortedAnswer);
+                    let sortedAnswer = sortByDateAsc([
+                        ...response.data.answerList,
+                    ]);
+                    setAnswerList(sortedAnswer);
+                    setPresentDetail(present);
+                    setSlideDetail(newSlideDetail);
+                }
+                setIsLoading(false);
             }
-            setIsLoading(false);
         }
         // Get group info, do some validate
         async function getSlideDetail() {
@@ -148,7 +270,7 @@ function SlidePresent() {
             try {
                 await callApiSlideDetail();
             } catch (error) {
-                await callApiSlideDetail();
+                setIsLoading(false);
             }
         }
         getSlideDetail();
@@ -196,8 +318,120 @@ function SlidePresent() {
             isMember = response.data.isMember;
         }
         setIsLoading(false);
-        return isMember;
     }
+
+    async function callApiGetChats(presentId, isPublic) {
+        let response = null;
+        try {
+            if (isPublic) {
+                response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentId}/${page}`
+                );
+            } else {
+                const accessToken = localStorage.getItem("access_token");
+                if (accessToken === null || accessToken === undefined) {
+                    setIsLoading(false);
+                    return;
+                }
+                response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentId}/${page}`,
+                    {
+                        headers: { Authorization: "Bearer " + accessToken },
+                    }
+                );
+            }
+
+            if (response !== null && response.status === 200) {
+                console.log("chat list: ", response.data.chatList);
+                setTotalPage(response.data.totalPage);
+                setChatList(response.data.chatList);
+            }
+            setIsLoading(false);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    const fetchMoreData = async () => {
+        let response = null;
+        try {
+            let newPage = page + 1;
+            if (newPage + 1 === totalPage) {
+                setHasMore(false);
+            }
+            if (isLogin) {
+                const accessToken = localStorage.getItem("access_token");
+                if (accessToken === null || accessToken === undefined) {
+                    return;
+                }
+                response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentDetail.presentId}/${newPage}`,
+                    {
+                        headers: { Authorization: "Bearer " + accessToken },
+                    }
+                );
+            } else {
+                response = await axios.get(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentDetail.presentId}/${newPage}`
+                );
+            }
+
+            if (response !== null && response.status === 200) {
+                console.log("response chat list:", response.data.chatList);
+                setChatList((prev) => {
+                    let newChatList = [...prev, ...response.data.chatList];
+                    console.log("newChatlist: ", newChatList);
+                    return newChatList;
+                });
+            }
+            setPage(newPage);
+            setIsLoading(false);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+    const handleAddNewMessage = async () => {
+        let response = null;
+
+        try {
+            if (isLogin) {
+                const accessToken = localStorage.getItem("access_token");
+                if (accessToken === null || accessToken === undefined) {
+                    return;
+                }
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentDetail.presentId}`,
+                    {
+                        content: chat,
+                    },
+                    {
+                        headers: { Authorization: "Bearer " + accessToken },
+                    }
+                );
+            } else {
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentDetail.presentId}`,
+                    {
+                        content: chat,
+                    }
+                );
+            }
+
+            if (response !== null && response.status === 200) {
+                console.log("new Chat: ", response.data.chat);
+                let addedChat = response.data.chat;
+                setChatList((prev) => {
+                    let newChatList = [...prev];
+                    newChatList.unshift(addedChat);
+                    return newChatList;
+                });
+            }
+            setChat("");
+            setIsLoading(false);
+        } catch (error) {
+            setChat("");
+            console.log(error);
+        }
+    };
     const handleSubmitForm = async (e) => {
         e.preventDefault();
         // console.log({
@@ -245,38 +479,90 @@ function SlidePresent() {
         );
     }
 
-    if (!presentDetail?.public) {
-        if (presentDetail?.group === null) {
-            return (
-                <div className="relative mx-auto max-w-[72vw] h-screen ">
-                    <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
-                        Present is not presenting
-                    </div>
-                    <img
-                        src={landingImg}
-                        className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
-                        alt="Slide presentation"
-                    />
+    // if (!presentDetail?.public) {
+    //     if (presentDetail?.group === null) {
+    //         return (
+    //             <div className="relative mx-auto max-w-[72vw] h-screen ">
+    //                 <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
+    //                     Present is not presenting
+    //                 </div>
+    //                 <img
+    //                     src={landingImg}
+    //                     className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
+    //                     alt="Slide presentation"
+    //                 />
+    //             </div>
+    //         );
+    //     } else if (!isMember) {
+    //         return (
+    //             <div className="relative mx-auto max-w-[72vw] h-screen ">
+    //                 <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
+    //                     You don't have permission to access this presentation
+    //                 </div>
+    //                 <img
+    //                     src={landingImg}
+    //                     className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
+    //                     alt="Slide presentation"
+    //                 />
+    //             </div>
+    //         );
+    //     }
+    // }
+    if (errorMessages.length > 1) {
+        return (
+            <div className="relative mx-auto max-w-[72vw] h-screen ">
+                <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
+                    You don't have permission to access this presentation
                 </div>
-            );
-        } else if (!isMember) {
-            return (
-                <div className="relative mx-auto max-w-[72vw] h-screen ">
-                    <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
-                        You don't have permission to access this presentation
-                    </div>
-                    <img
-                        src={landingImg}
-                        className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
-                        alt="Slide presentation"
-                    />
-                </div>
-            );
-        }
+                <img
+                    src={landingImg}
+                    className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
+                    alt="Slide presentation"
+                />
+            </div>
+        );
     }
 
     return (
         <div>
+            <header className="flex justify-between px-20 py-4 bg-[#333] ml-0">
+                <ul className="flex text-white m-0 p-0">
+                    <li className="mr-4">
+                        <Link
+                            to="/home"
+                            className="no-underline text-[#61dafb]"
+                        >
+                            KahooPaTiKa
+                        </Link>
+                    </li>
+                    <li className="mr-4">
+                        <Link
+                            to="/home"
+                            className="no-underline text-white hover:text-[#61dafb]"
+                        >
+                            Home
+                        </Link>
+                    </li>
+                    <li className="mr-4">
+                        <Link
+                            to="/home/presentation"
+                            className="no-underline text-white hover:text-[#61dafb]"
+                        >
+                            Presentation
+                        </Link>
+                    </li>
+                </ul>
+                <ul className="flex text-white m-0 p-0">
+                    <li className="mr-4">
+                        <Link
+                            to="/home/profile"
+                            className="no-underline text-white hover:text-[#61dafb]"
+                        >
+                            Hello {localStorage.getItem("firstName")}
+                        </Link>
+                    </li>
+                </ul>
+            </header>
             <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">
                 KahooClone
             </h1>
@@ -363,6 +649,236 @@ function SlidePresent() {
                         Submit
                     </button>
                 </form>
+            </div>
+            <div>
+                {showBox === "chat" && (
+                    <div className="flex flex-col fixed bottom-[10px] right-[4vw] bg-white rounded-lg shadow h-[400px] w-[20vw]">
+                        <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
+                            Messages
+                            <span
+                                className="p-1 cursor-pointer"
+                                onClick={() => setShowBox("")}
+                            >
+                                X
+                            </span>
+                        </div>
+                        <div
+                            id="scrollableDiv"
+                            style={{
+                                height: "300px",
+                                overflow: "auto",
+                                display: "flex",
+                                flexDirection: "column-reverse",
+                            }}
+                        >
+                            <InfiniteScroll
+                                dataLength={chatList.length}
+                                next={fetchMoreData}
+                                hasMore={hasMore}
+                                scrollableTarget="scrollableDiv"
+                                inverse={true}
+                                loader={
+                                    <p className="text-center">Loading ...</p>
+                                }
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column-reverse",
+                                }}
+                                endMessage={
+                                    <p style={{ textAlign: "center" }}>
+                                        <b>Yay! You have seen it all</b>
+                                    </p>
+                                }
+                            >
+                                <ul className="flex flex-col-reverse">
+                                    {chatList.length > 0 &&
+                                        chatList.map((q) => {
+                                            return (
+                                                <li
+                                                    className="px-4 py-2 mt-1 flex items-center"
+                                                    key={q.chatId}
+                                                >
+                                                    <span
+                                                        className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
+                                                        title={q.user.firstName}
+                                                    >
+                                                        {q.user.firstName[0]}
+                                                    </span>
+                                                    <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
+                                                        {q.message}
+                                                    </span>
+                                                    <span className="ml-auto text-xs">
+                                                        {new Date(
+                                                            q.createdAt
+                                                        ).toLocaleTimeString()}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                </ul>
+                            </InfiniteScroll>
+                        </div>
+                        <div className="flex justify-between px-4 mt-auto mb-2">
+                            <input
+                                placeholder="Add new chat"
+                                className="border border-sky-400 rounded-2xl px-2 mr-2"
+                                value={chat}
+                                onChange={(e) => setChat(e.target.value)}
+                            />
+                            <button
+                                className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-2xl px-4 py-2"
+                                onClick={handleAddNewMessage}
+                            >
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {showBox === "question" && (
+                    <div className="flex flex-col fixed bottom-[10px] right-[4vw] bg-white rounded-lg shadow h-[460px] w-[20vw]">
+                        <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
+                            Questions
+                            <span
+                                className="p-1 cursor-pointer"
+                                onClick={() => setShowBox("")}
+                            >
+                                X
+                            </span>
+                        </div>
+                        <ul className=" overflow-y-scroll h-[80%]">
+                            {presentDetail?.questionList.length > 0 &&
+                                presentDetail.questionList.map((q) => {
+                                    return (
+                                        <li
+                                            className="px-4 py-2 mt-1 flex items-center"
+                                            key={q.questionId}
+                                        >
+                                            <span
+                                                className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
+                                                title={q.user.firstName}
+                                            >
+                                                {q.user.firstName[0]}
+                                            </span>
+                                            <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
+                                                {q.content}
+                                            </span>
+                                            <span className="ml-auto text-xs">
+                                                {new Date(
+                                                    q.createdAt
+                                                ).toLocaleTimeString()}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                        </ul>
+                        <div className="flex justify-between px-4 mt-auto mb-2">
+                            <input
+                                placeholder="Add new question"
+                                className="border border-sky-400 rounded-2xl px-2 mr-2"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                            />
+                            <button className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-2xl px-4 py-2 ">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {showBox === "answer" && (
+                    <div className="flex flex-col fixed bottom-[10px] right-[4vw] bg-white rounded-lg shadow h-[460px] w-[20vw]">
+                        <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
+                            Answer Result
+                            <span
+                                className="p-1 cursor-pointer"
+                                onClick={() => setShowBox("")}
+                            >
+                                X
+                            </span>
+                        </div>
+                        <ul className=" overflow-y-scroll h-[80%]">
+                            {answerList.length > 0 &&
+                                answerList.map((answersByDate, index) => {
+                                    let list =
+                                        answersByDate[
+                                            Object.keys(answersByDate)[0]
+                                        ];
+                                    console.log(
+                                        answersByDate[
+                                            Object.keys(answersByDate)[0]
+                                        ]
+                                    );
+                                    return (
+                                        <>
+                                            <div className="text-center text-sm">
+                                                {index === answerList.length - 1
+                                                    ? "Today"
+                                                    : new Date(
+                                                          Object.keys(
+                                                              answersByDate
+                                                          )[0]
+                                                      )
+                                                          .toLocaleString(
+                                                              "vi-VN"
+                                                          )
+                                                          .slice(10)}
+                                            </div>
+                                            {list.map((a) => {
+                                                return (
+                                                    <li
+                                                        className="px-4 py-2 mt-1 flex items-center"
+                                                        key={a.answerId}
+                                                    >
+                                                        <span
+                                                            className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
+                                                            title={
+                                                                a.user.firstName
+                                                            }
+                                                        >
+                                                            {
+                                                                a.user
+                                                                    .firstName[0]
+                                                            }
+                                                        </span>
+                                                        <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
+                                                            {
+                                                                a.option
+                                                                    .optionName
+                                                            }
+                                                        </span>
+                                                        <span className="ml-auto text-xs">
+                                                            {new Date(
+                                                                a.createdAt
+                                                            ).toLocaleTimeString()}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </>
+                                    );
+                                })}
+                        </ul>
+                    </div>
+                )}
+            </div>
+            <div className="fixed right-[10px] bottom-[10px]">
+                <div
+                    className="bg-[#61dafb] rounded-full p-3  hover:shadow-2xl shadow cursor-pointer"
+                    onClick={() => setShowBox("chat")}
+                >
+                    <BsFillChatFill size={36} color="#ffffff" />
+                </div>
+                <div
+                    className="bg-[#61dafb] rounded-full p-3  hover:shadow-2xl shadow my-2 cursor-pointer"
+                    onClick={() => setShowBox("question")}
+                >
+                    <BsFillQuestionCircleFill size={36} color="#ffffff" />
+                </div>
+                <div
+                    className="bg-[#61dafb] rounded-full p-3  hover:shadow-2xl shadow cursor-pointer"
+                    onClick={() => setShowBox("answer")}
+                >
+                    <RiSurveyFill size={36} color="#ffffff" />
+                </div>
             </div>
         </div>
     );

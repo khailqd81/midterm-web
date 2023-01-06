@@ -74,4 +74,11 @@ public class Presentation {
 			CascadeType.PERSIST, CascadeType.REFRESH })
 	@JoinColumn(name="current_slide_id", referencedColumnName = "slide_id")
 	private Slide currentSlide;
+	
+	@OneToMany(mappedBy = "present")
+	@JsonIgnore
+	private List<Chat> chatList;
+	
+	@OneToMany(mappedBy = "present")
+	private List<Question> questionList;
 }

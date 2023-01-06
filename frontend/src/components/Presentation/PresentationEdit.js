@@ -7,7 +7,6 @@ import ReactLoading from "react-loading";
 import { useSocket } from "../customHook/useSocket";
 import { toast } from "react-toastify";
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
-import { BsCheckLg } from "react-icons/bs";
 
 function PresentationEdit() {
     // Fullscreen mode with react-full-screen
