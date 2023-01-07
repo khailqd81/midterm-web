@@ -9,6 +9,7 @@ import { useSocket } from "../customHook/useSocket";
 import landingImg from "../../landing-page-img.jpeg";
 import { refreshAccessToken } from "../utils/auth";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { toast, ToastContainer } from "react-toastify";
 
 function SlidePresent() {
     const params = useParams();
@@ -19,6 +20,7 @@ function SlidePresent() {
     const [answerList, setAnswerList] = useState([]);
     const [hasMore, setHasMore] = useState(true);
     const [totalPage, setTotalPage] = useState(0);
+    const [isNotify, setIsNotify] = useState(true);
     // Input question and message
     const [chat, setChat] = useState("");
     const [question, setQuestion] = useState("");
@@ -154,9 +156,14 @@ function SlidePresent() {
     });
     const navigate = useNavigate();
 
-    function sortByDateAsc(arraySort) {
+    function sortByDate(arraySort, isDesc) {
         console.log("arraySort", arraySort);
-        const sortedData = arraySort.sort((a, b) => a.createdAt - b.createdAt);
+        let sortedData = null;
+        if (isDesc) {
+            sortedData = arraySort.sort((a, b) => b.createdAt - a.createdAt);
+        } else {
+            sortedData = arraySort.sort((a, b) => a.createdAt - b.createdAt);
+        }
         let currentDay = new Date(sortedData[0].createdAt);
         console.log("createMessagesArray", currentDay);
 
@@ -193,9 +200,38 @@ function SlidePresent() {
         return fullMessageArray;
     }
     useEffect(() => {
-        console.log(socketResponse);
-        // Sort data
+        // Call api get chat list
+        async function callApiGetChats(presentId, isPublic) {
+            let response = null;
+            try {
+                if (isPublic) {
+                    response = await axios.get(
+                        `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentId}/0`
+                    );
+                } else {
+                    const accessToken = localStorage.getItem("access_token");
+                    if (accessToken === null || accessToken === undefined) {
+                        setIsLoading(false);
+                        return;
+                    }
+                    response = await axios.get(
+                        `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentId}/0`,
+                        {
+                            headers: { Authorization: "Bearer " + accessToken },
+                        }
+                    );
+                }
 
+                if (response !== null && response.status === 200) {
+                    console.log("chat list: ", response.data.chatList);
+                    setTotalPage(response.data.totalPage);
+                    setChatList(response.data.chatList);
+                }
+                setIsLoading(false);
+            } catch (error) {
+                console.log(error);
+            }
+        }
         // Call api group information
         async function callApiSlideDetail() {
             const presentId = params.presentId;
@@ -250,7 +286,7 @@ function SlidePresent() {
                     );
                     // let sortedAnswer = [...response.data.answerList];
                     // console.log("sortedAnswer", sortedAnswer);
-                    let sortedAnswer = sortByDateAsc([
+                    let sortedAnswer = sortByDate([
                         ...response.data.answerList,
                     ]);
                     setAnswerList(sortedAnswer);
@@ -274,7 +310,36 @@ function SlidePresent() {
             }
         }
         getSlideDetail();
-    }, [socketResponse, params.slideId, navigate]);
+    }, [params.slideId, navigate, params.presentId]);
+
+    useEffect(() => {
+        console.log("slide presentent:", socketResponse);
+        console.log("slide presentent id:", socketResponse.presentId);
+        if (socketResponse.presentId) {
+            if (
+                socketResponse.public !== presentDetail.public ||
+                socketResponse?.group?.groupId !== presentDetail?.group?.groupId
+            ) {
+                window.location.reload();
+            }
+            setPresentDetail(socketResponse);
+            let newSlideDetail = socketResponse.currentSlide;
+            newSlideDetail?.optionList.sort((a, b) => a.optionId - b.optionId);
+            setSlideDetail(newSlideDetail);
+        } else if (socketResponse.chat) {
+            toast.info("New message added", {
+                autoClose: 3000,
+                style: {
+                    marginTop: "50px",
+                },
+            });
+            setChatList((prev) => {
+                let newChatList = [...prev];
+                newChatList.unshift(socketResponse.chat);
+                return newChatList;
+            });
+        }
+    }, [socketResponse]);
 
     const onInputChange = (e, optionId) => {
         setAnswer({
@@ -320,37 +385,6 @@ function SlidePresent() {
         setIsLoading(false);
     }
 
-    async function callApiGetChats(presentId, isPublic) {
-        let response = null;
-        try {
-            if (isPublic) {
-                response = await axios.get(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentId}/${page}`
-                );
-            } else {
-                const accessToken = localStorage.getItem("access_token");
-                if (accessToken === null || accessToken === undefined) {
-                    setIsLoading(false);
-                    return;
-                }
-                response = await axios.get(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentId}/${page}`,
-                    {
-                        headers: { Authorization: "Bearer " + accessToken },
-                    }
-                );
-            }
-
-            if (response !== null && response.status === 200) {
-                console.log("chat list: ", response.data.chatList);
-                setTotalPage(response.data.totalPage);
-                setChatList(response.data.chatList);
-            }
-            setIsLoading(false);
-        } catch (error) {
-            console.log(error);
-        }
-    }
     const fetchMoreData = async () => {
         let response = null;
         try {
@@ -418,12 +452,13 @@ function SlidePresent() {
 
             if (response !== null && response.status === 200) {
                 console.log("new Chat: ", response.data.chat);
-                let addedChat = response.data.chat;
-                setChatList((prev) => {
-                    let newChatList = [...prev];
-                    newChatList.unshift(addedChat);
-                    return newChatList;
-                });
+                //let addedChat = response.data.chat;
+                setIsNotify(false);
+                // setChatList((prev) => {
+                //     let newChatList = [...prev];
+                //     newChatList.unshift(addedChat);
+                //     return newChatList;
+                // });
             }
             setChat("");
             setIsLoading(false);
@@ -525,6 +560,18 @@ function SlidePresent() {
 
     return (
         <div>
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover={false}
+                theme="colored"
+            />
             <header className="flex justify-between px-20 py-4 bg-[#333] ml-0">
                 <ul className="flex text-white m-0 p-0">
                     <li className="mr-4">
@@ -652,7 +699,7 @@ function SlidePresent() {
             </div>
             <div>
                 {showBox === "chat" && (
-                    <div className="flex flex-col fixed bottom-[10px] right-[4vw] bg-white rounded-lg shadow h-[400px] w-[20vw]">
+                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[324px]">
                         <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
                             Messages
                             <span
@@ -692,29 +739,78 @@ function SlidePresent() {
                             >
                                 <ul className="flex flex-col-reverse">
                                     {chatList.length > 0 &&
-                                        chatList.map((q) => {
-                                            return (
-                                                <li
-                                                    className="px-4 py-2 mt-1 flex items-center"
-                                                    key={q.chatId}
-                                                >
-                                                    <span
-                                                        className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
-                                                        title={q.user.firstName}
-                                                    >
-                                                        {q.user.firstName[0]}
-                                                    </span>
-                                                    <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
-                                                        {q.message}
-                                                    </span>
-                                                    <span className="ml-auto text-xs">
-                                                        {new Date(
-                                                            q.createdAt
-                                                        ).toLocaleTimeString()}
-                                                    </span>
-                                                </li>
-                                            );
-                                        })}
+                                        sortByDate(chatList, true).map(
+                                            (chatByDate, index) => {
+                                                let list =
+                                                    chatByDate[
+                                                        Object.keys(
+                                                            chatByDate
+                                                        )[0]
+                                                    ];
+                                                console.log(
+                                                    chatByDate[
+                                                        Object.keys(
+                                                            chatByDate
+                                                        )[0]
+                                                    ]
+                                                );
+                                                return (
+                                                    <>
+                                                        {list.map((a) => {
+                                                            return (
+                                                                <li
+                                                                    className="px-4 py-2 mt-1 flex items-center"
+                                                                    key={
+                                                                        a.chatId
+                                                                    }
+                                                                >
+                                                                    <span
+                                                                        className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
+                                                                        title={
+                                                                            a
+                                                                                .user
+                                                                                .firstName
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            a
+                                                                                .user
+                                                                                .firstName[0]
+                                                                        }
+                                                                    </span>
+                                                                    <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
+                                                                        {
+                                                                            a.message
+                                                                        }
+                                                                    </span>
+                                                                    <span className="ml-auto text-xs">
+                                                                        {new Date(
+                                                                            a.createdAt
+                                                                        ).toLocaleTimeString()}
+                                                                    </span>
+                                                                </li>
+                                                            );
+                                                        })}
+                                                        <div className="text-center text-sm">
+                                                            {index ===
+                                                            chatList.length - 1
+                                                                ? "Today"
+                                                                : new Date(
+                                                                      Object.keys(
+                                                                          chatByDate
+                                                                      )[0]
+                                                                  )
+                                                                      .toLocaleString(
+                                                                          "vi-VN"
+                                                                      )
+                                                                      .slice(
+                                                                          10
+                                                                      )}
+                                                        </div>
+                                                    </>
+                                                );
+                                            }
+                                        )}
                                 </ul>
                             </InfiniteScroll>
                         </div>
@@ -735,7 +831,7 @@ function SlidePresent() {
                     </div>
                 )}
                 {showBox === "question" && (
-                    <div className="flex flex-col fixed bottom-[10px] right-[4vw] bg-white rounded-lg shadow h-[460px] w-[20vw]">
+                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[324px]">
                         <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
                             Questions
                             <span
@@ -785,7 +881,7 @@ function SlidePresent() {
                     </div>
                 )}
                 {showBox === "answer" && (
-                    <div className="flex flex-col fixed bottom-[10px] right-[4vw] bg-white rounded-lg shadow h-[460px] w-[20vw]">
+                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[324px]">
                         <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
                             Answer Result
                             <span
@@ -802,11 +898,6 @@ function SlidePresent() {
                                         answersByDate[
                                             Object.keys(answersByDate)[0]
                                         ];
-                                    console.log(
-                                        answersByDate[
-                                            Object.keys(answersByDate)[0]
-                                        ]
-                                    );
                                     return (
                                         <>
                                             <div className="text-center text-sm">
@@ -883,5 +974,29 @@ function SlidePresent() {
         </div>
     );
 }
-
+{
+    /* chatList.map((q) => {
+                                            return (
+                                                <li
+                                                    className="px-4 py-2 mt-1 flex items-center"
+                                                    key={q.chatId}
+                                                >
+                                                    <span
+                                                        className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
+                                                        title={q.user.firstName}
+                                                    >
+                                                        {q.user.firstName[0]}
+                                                    </span>
+                                                    <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
+                                                        {q.message}
+                                                    </span>
+                                                    <span className="ml-auto text-xs">
+                                                        {new Date(
+                                                            q.createdAt
+                                                        ).toLocaleTimeString()}
+                                                    </span>
+                                                </li>
+                                            );
+                                        }) */
+}
 export default SlidePresent;

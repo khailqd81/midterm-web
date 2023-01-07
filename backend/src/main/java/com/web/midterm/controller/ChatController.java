@@ -31,9 +31,9 @@ public class ChatController {
 	private String socketUrl;
 
 	@PostMapping("/{presentId}")
-	public ResponseEntity<?> addNewMessage(@PathVariable int presentId, @RequestBody Map<String,String> payload)
+	public ResponseEntity<?> addNewMessage(@PathVariable int presentId, @RequestBody Map<String, String> payload)
 			throws Exception {
-		
+
 		Chat addedChat = chatService.addNewMessage(presentId, payload.get("content"));
 		Presentation p = addedChat.getPresent();
 		// call socket server
@@ -43,22 +43,22 @@ public class ChatController {
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
 		map.put("group", p.getGroup());
+		map.put("chat", addedChat);
 //		map.put("oldGroup", oldGroup);
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		Map<String, Object> result = new HashMap<>();
 		result.put("message", "Add new message success");
 		result.put("chat", addedChat);
 		return ResponseEntity.ok().body(result);
 	}
-	
+
 	@PostMapping("/public/{presentId}")
-	public ResponseEntity<?> addNewMessageAnonymus(@PathVariable int presentId, @RequestBody Map<String,String> payload)
-			throws Exception {
+	public ResponseEntity<?> addNewMessageAnonymus(@PathVariable int presentId,
+			@RequestBody Map<String, String> payload) throws Exception {
 		Chat addedChat = chatService.addNewMessageAnonymus(presentId, payload.get("content"));
 		Presentation p = addedChat.getPresent();
 		// call socket server
@@ -67,23 +67,23 @@ public class ChatController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
-		//map.put("group", p.getGroup());
+		map.put("chat", addedChat);
+		// map.put("group", p.getGroup());
 //		map.put("oldGroup", oldGroup);
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		Map<String, Object> result = new HashMap<>();
 		result.put("message", "Add new message success");
 		result.put("chat", addedChat);
 		return ResponseEntity.ok().body(result);
 	}
-	
 
 	@GetMapping("/public/{presentId}/{page}")
-	public ResponseEntity<?> viewChatMessagesPublic(@PathVariable int presentId, @PathVariable int page) throws Exception {
+	public ResponseEntity<?> viewChatMessagesPublic(@PathVariable int presentId, @PathVariable int page)
+			throws Exception {
 		Page<Chat> chatPage = chatService.findByPresentationIdPublic(presentId, page);
 		List<Chat> chatList = chatPage.getContent();
 		int totalPage = chatPage.getTotalPages();
@@ -92,7 +92,7 @@ public class ChatController {
 		result.put("totalPage", totalPage);
 		return ResponseEntity.ok().body(result);
 	}
-	
+
 	@GetMapping("/{presentId}/{page}")
 	public ResponseEntity<?> viewChatMessages(@PathVariable int presentId, @PathVariable int page) throws Exception {
 		Page<Chat> chatPage = chatService.findByPresentationId(presentId, page);

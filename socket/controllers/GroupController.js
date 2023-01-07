@@ -7,6 +7,10 @@ module.exports.handlePresentInGroup = (req, res, next) => {
     ...req.body.group,
     room: req.body.room,
   });
+  var presentRoom = "present" + req.body.presentation.presentId;
+  socketIoObject.socketIo.to(presentRoom).emit("read_message", {
+    ...req.body.presentation,
+  });
   var groupRoom = "group" + req.body.group.groupId;
   socketIoObject.socketIo.to(groupRoom).emit("read_message", {
     ...req.body.presentation,
