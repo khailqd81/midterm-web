@@ -28,9 +28,9 @@ public class QuestionController {
 	private String socketUrl;
 
 	@PostMapping("/{presentId}")
-	public ResponseEntity<?> addNewQuestion(@PathVariable int presentId, @RequestBody Map<String,String> payload)
+	public ResponseEntity<?> addNewQuestion(@PathVariable int presentId, @RequestBody Map<String, String> payload)
 			throws Exception {
-		
+
 		Question addedQuestion = questionService.addNewQuestion(presentId, payload.get("content"));
 		Presentation p = addedQuestion.getPresent();
 		// call socket server
@@ -44,17 +44,16 @@ public class QuestionController {
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		Map<String, String> result = new HashMap<>();
 		result.put("message", "Add new question success");
 		return ResponseEntity.ok().body(result);
 	}
-	
+
 	@PostMapping("/public/{presentId}")
-	public ResponseEntity<?> addNewMessageAnonymus(@PathVariable int presentId, @RequestBody Map<String,String> payload)
-			throws Exception {
+	public ResponseEntity<?> addNewMessageAnonymus(@PathVariable int presentId,
+			@RequestBody Map<String, String> payload) throws Exception {
 		Question addedQuestion = questionService.addNewQuestionPublic(presentId, payload.get("content"));
 		Presentation p = addedQuestion.getPresent();
 		// call socket server
@@ -63,22 +62,21 @@ public class QuestionController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
-		//map.put("group", p.getGroup());
+		// map.put("question", addedQuestion);
+		// map.put("group", p.getGroup());
 //		map.put("oldGroup", oldGroup);
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		Map<String, String> result = new HashMap<>();
 		result.put("message", "Add new question success");
 		return ResponseEntity.ok().body(result);
 	}
-	
+
 	@PutMapping("/{questionId}/vote")
-	public ResponseEntity<?> upvoteQuestion(@PathVariable int questionId)
-			throws Exception {
+	public ResponseEntity<?> upvoteQuestion(@PathVariable int questionId) throws Exception {
 		Question q = questionService.upvoteQuestion(questionId);
 		Presentation p = q.getPresent();
 		// call socket server
@@ -87,22 +85,21 @@ public class QuestionController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
-		//map.put("group", p.getGroup());
+		// map.put("group", p.getGroup());
 //		map.put("oldGroup", oldGroup);
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		 ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
+		 Void.class);
 		//
 		Map<String, String> result = new HashMap<>();
 		result.put("message", "Add new question success");
 		return ResponseEntity.ok().body(result);
 	}
-	
+
 	@PutMapping("/public/{questionId}/vote")
-	public ResponseEntity<?> upvoteQuestionPublic(@PathVariable int questionId)
-			throws Exception {
+	public ResponseEntity<?> upvoteQuestionPublic(@PathVariable int questionId) throws Exception {
 		Question q = questionService.upvoteQuestion(questionId);
 		Presentation p = q.getPresent();
 		// call socket server
@@ -111,22 +108,20 @@ public class QuestionController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
-		//map.put("group", p.getGroup());
+		// map.put("group", p.getGroup());
 //		map.put("oldGroup", oldGroup);
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		Map<String, String> result = new HashMap<>();
 		result.put("message", "Add new question success");
 		return ResponseEntity.ok().body(result);
 	}
-	
+
 	@PutMapping("/{questionId}/answer")
-	public ResponseEntity<?> markAnsweredQuestion(@PathVariable int questionId)
-			throws Exception {
+	public ResponseEntity<?> markAnsweredQuestion(@PathVariable int questionId) throws Exception {
 		Question q = questionService.updateAnsweredQuestion(questionId);
 		Presentation p = q.getPresent();
 		// call socket server
@@ -135,13 +130,13 @@ public class QuestionController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
-		//map.put("group", p.getGroup());
+		// map.put("question", q);
+		// map.put("group", p.getGroup());
 //		map.put("oldGroup", oldGroup);
 //		map.put("room", p.getPresentId());
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
-		// ResponseEntity<Void> response = restTemplate.postForEntity(url, map,
-		// Void.class);
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//
 		Map<String, String> result = new HashMap<>();
 		result.put("message", "Add new question success");

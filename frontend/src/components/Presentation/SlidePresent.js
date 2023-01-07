@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BarChart, Bar, LabelList, XAxis, ResponsiveContainer } from "recharts";
-import { BsFillChatFill, BsFillQuestionCircleFill } from "react-icons/bs";
+import {
+    BsFillChatFill,
+    BsFillQuestionCircleFill,
+    BsArrowUp,
+    BsArrowDown,
+} from "react-icons/bs";
+import { FaArrowUp, FaArrowDown } from "react-icons/fa";
+import { AiFillCheckCircle } from "react-icons/ai";
 import { RiSurveyFill } from "react-icons/ri";
 import ReactLoading from "react-loading";
 import axios from "axios";
@@ -24,6 +31,7 @@ function SlidePresent() {
     // Input question and message
     const [chat, setChat] = useState("");
     const [question, setQuestion] = useState("");
+    const [filterType, setFilterType] = useState("timeup");
     //
     const [errorMessages, setErrorMessages] = useState("");
     const [page, setPage] = useState(0);
@@ -423,6 +431,7 @@ function SlidePresent() {
             console.log(error);
         }
     };
+
     const handleAddNewMessage = async () => {
         let response = null;
 
@@ -464,6 +473,193 @@ function SlidePresent() {
             setIsLoading(false);
         } catch (error) {
             setChat("");
+            console.log(error);
+        }
+    };
+
+    const handleAddNewQuestion = async () => {
+        let response = null;
+
+        try {
+            if (isLogin) {
+                const accessToken = localStorage.getItem("access_token");
+                if (accessToken === null || accessToken === undefined) {
+                    return;
+                }
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/${presentDetail.presentId}`,
+                    {
+                        content: question,
+                    },
+                    {
+                        headers: { Authorization: "Bearer " + accessToken },
+                    }
+                );
+            } else {
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/public/${presentDetail.presentId}`,
+                    {
+                        content: question,
+                    }
+                );
+            }
+
+            if (response !== null && response.status === 200) {
+                console.log("new Question: ", response.data.question);
+                //let addedChat = response.data.chat;
+                // setChatList((prev) => {
+                //     let newChatList = [...prev];
+                //     newChatList.unshift(addedChat);
+                //     return newChatList;
+                // });
+            }
+            setQuestion("");
+        } catch (error) {
+            setQuestion("");
+            console.log(error);
+        }
+    };
+
+    // asc true sort newest to oldest else reverse
+    const sortByCreatedAt = (arr, asc) => {
+        let sortedData = null;
+        if (asc) {
+            sortedData = arr.sort((a, b) => a.createdAt - b.createdAt);
+        } else {
+            sortedData = arr.sort((a, b) => b.createdAt - a.createdAt);
+        }
+        return sortedData;
+    };
+
+    // isAnswered true sort answer to unanswer (sort by newest to oldest in each group) else reverse
+    const sortByAnswered = (arr, isAnswered) => {
+        let answeredArr = null;
+        let unansweredArr = null;
+        answeredArr = arr.filter((e) => e.answer);
+        unansweredArr = arr.filter((e) => !e.answer);
+        answeredArr.sort((a, b) => b.createdAt - a.createdAt);
+        unansweredArr.sort((a, b) => b.createdAt - a.createdAt);
+        if (isAnswered) {
+            return [...answeredArr, ...unansweredArr];
+        } else {
+            return [...unansweredArr, ...answeredArr];
+        }
+    };
+
+    // asc true sort most vote to lowest vote else reverse
+    const sortByVote = (arr, asc) => {
+        let sortedData = null;
+        if (asc) {
+            sortedData = arr.sort((a, b) => a.vote - b.vote);
+        } else {
+            sortedData = arr.sort((a, b) => b.vote - a.vote);
+        }
+        return sortedData;
+    };
+
+    const sortQuestionList = (arr) => {
+        switch (filterType) {
+            case "voteup": {
+                return sortByVote(arr, false);
+            }
+            case "votedown": {
+                return sortByVote(arr, true);
+            }
+            case "answered": {
+                return sortByAnswered(arr, true);
+            }
+            case "unanswered": {
+                return sortByAnswered(arr, false);
+            }
+            case "timeup": {
+                return sortByCreatedAt(arr, false);
+            }
+            case "timedown": {
+                return sortByCreatedAt(arr, true);
+            }
+            default: {
+                return sortByCreatedAt(arr, false);
+            }
+        }
+    };
+    const handleUpVote = async (questionId) => {
+        let response = null;
+
+        try {
+            if (isLogin) {
+                const accessToken = localStorage.getItem("access_token");
+                if (accessToken === null || accessToken === undefined) {
+                    return;
+                }
+                response = await axios.put(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/${questionId}/vote`,
+                    {},
+                    {
+                        headers: { Authorization: "Bearer " + accessToken },
+                    }
+                );
+            } else {
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/public/${questionId}/vote`,
+                    {}
+                );
+            }
+
+            if (response !== null && response.status === 200) {
+                console.log("new Question: ", response.data.question);
+                //let addedChat = response.data.chat;
+                // setChatList((prev) => {
+                //     let newChatList = [...prev];
+                //     newChatList.unshift(addedChat);
+                //     return newChatList;
+                // });
+            }
+            setQuestion("");
+        } catch (error) {
+            setQuestion("");
+            console.log(error);
+        }
+    };
+
+    const handleMarkAnswer = async (questionId) => {
+        let response = null;
+
+        try {
+            if (isLogin) {
+                const accessToken = localStorage.getItem("access_token");
+                if (accessToken === null || accessToken === undefined) {
+                    return;
+                }
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/${presentDetail.presentId}`,
+                    {
+                        content: question,
+                    },
+                    {
+                        headers: { Authorization: "Bearer " + accessToken },
+                    }
+                );
+            } else {
+                response = await axios.post(
+                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/public/${presentDetail.presentId}`,
+                    {
+                        content: question,
+                    }
+                );
+            }
+
+            if (response !== null && response.status === 200) {
+                console.log("new Question: ", response.data.question);
+                //let addedChat = response.data.chat;
+                // setChatList((prev) => {
+                //     let newChatList = [...prev];
+                //     newChatList.unshift(addedChat);
+                //     return newChatList;
+                // });
+            }
+            setQuestion("");
+        } catch (error) {
+            setQuestion("");
             console.log(error);
         }
     };
@@ -831,7 +1027,7 @@ function SlidePresent() {
                     </div>
                 )}
                 {showBox === "question" && (
-                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[324px]">
+                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[600px]">
                         <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
                             Questions
                             <span
@@ -841,9 +1037,84 @@ function SlidePresent() {
                                 X
                             </span>
                         </div>
+                        <div className="flex font-bold px-4 py-1 items-center">
+                            Filter
+                            {filterType === "voteup" ? (
+                                <div
+                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
+                                    onClick={() => setFilterType("votedown")}
+                                >
+                                    <span className="mr-2">Vote</span>
+                                    <FaArrowUp size={14} />
+                                </div>
+                            ) : filterType === "votedown" ? (
+                                <div
+                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
+                                    onClick={() => setFilterType("voteup")}
+                                >
+                                    <span className="mr-2">Vote</span>
+                                    <FaArrowDown size={14} />
+                                </div>
+                            ) : (
+                                <div
+                                    className="border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none"
+                                    onClick={() => setFilterType("voteup")}
+                                >
+                                    <span>Vote</span>
+                                </div>
+                            )}
+                            {filterType === "answered" ? (
+                                <div
+                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
+                                    onClick={() => setFilterType("unanswered")}
+                                >
+                                    <span className="mr-2">Answered</span>
+                                </div>
+                            ) : filterType === "unanswered" ? (
+                                <div
+                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
+                                    onClick={() => setFilterType("answered")}
+                                >
+                                    <span className="mr-2">Unanswered</span>
+                                </div>
+                            ) : (
+                                <div
+                                    className="border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none"
+                                    onClick={() => setFilterType("answered")}
+                                >
+                                    <span>Answered</span>
+                                </div>
+                            )}
+                            {filterType === "timeup" ? (
+                                <div
+                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
+                                    onClick={() => setFilterType("timedown")}
+                                >
+                                    <span className="mr-2">Time asked</span>
+                                    <FaArrowUp size={14} />
+                                </div>
+                            ) : filterType === "timedown" ? (
+                                <div
+                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
+                                    onClick={() => setFilterType("timeup")}
+                                >
+                                    <span className="mr-2">Time asked</span>
+                                    <FaArrowDown size={14} />
+                                </div>
+                            ) : (
+                                <div
+                                    className="border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none"
+                                    onClick={() => setFilterType("timeup")}
+                                >
+                                    <span>Time asked</span>
+                                </div>
+                            )}
+                        </div>
                         <ul className=" overflow-y-scroll h-[80%]">
                             {presentDetail?.questionList.length > 0 &&
-                                presentDetail.questionList.map((q) => {
+                                sortQuestionList(
+                                    presentDetail.questionList
+                                ).map((q) => {
                                     return (
                                         <li
                                             className="px-4 py-2 mt-1 flex items-center"
@@ -855,13 +1126,43 @@ function SlidePresent() {
                                             >
                                                 {q.user.firstName[0]}
                                             </span>
-                                            <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
+                                            <span className="border px-2 py-2 rounded-lg bg-slate-100 basis-1/2 mr-2">
                                                 {q.content}
                                             </span>
+                                            <span className="border px-2 py-2 rounded-lg bg-slate-100 mr-2">
+                                                {q.vote}
+                                            </span>
+                                            <button
+                                                className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-lg  px-2 py-2 mr-2 hover:text-white"
+                                                onClick={() =>
+                                                    handleUpVote(q.questionId)
+                                                }
+                                            >
+                                                Vote
+                                            </button>
+                                            {q.answered ? (
+                                                <div className="">
+                                                    <AiFillCheckCircle
+                                                        className="text-green-500"
+                                                        size={24}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    className=""
+                                                    onClick={handleMarkAnswer}
+                                                >
+                                                    <AiFillCheckCircle
+                                                        className="text-stone-700 hover:text-green-500 hover:shadow-lg"
+                                                        size={24}
+                                                    />
+                                                </button>
+                                            )}
+
                                             <span className="ml-auto text-xs">
                                                 {new Date(
                                                     q.createdAt
-                                                ).toLocaleTimeString()}
+                                                ).toLocaleString("vi-VN")}
                                             </span>
                                         </li>
                                     );
@@ -874,7 +1175,10 @@ function SlidePresent() {
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                             />
-                            <button className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-2xl px-4 py-2 ">
+                            <button
+                                className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-2xl px-4 py-2"
+                                onClick={handleAddNewQuestion}
+                            >
                                 Submit
                             </button>
                         </div>
@@ -973,30 +1277,5 @@ function SlidePresent() {
             </div>
         </div>
     );
-}
-{
-    /* chatList.map((q) => {
-                                            return (
-                                                <li
-                                                    className="px-4 py-2 mt-1 flex items-center"
-                                                    key={q.chatId}
-                                                >
-                                                    <span
-                                                        className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
-                                                        title={q.user.firstName}
-                                                    >
-                                                        {q.user.firstName[0]}
-                                                    </span>
-                                                    <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
-                                                        {q.message}
-                                                    </span>
-                                                    <span className="ml-auto text-xs">
-                                                        {new Date(
-                                                            q.createdAt
-                                                        ).toLocaleTimeString()}
-                                                    </span>
-                                                </li>
-                                            );
-                                        }) */
 }
 export default SlidePresent;
