@@ -7,18 +7,14 @@ module.exports.handleNotifyNewQuestion = (req, res, next) => {
   socketIoObject.socketIo.to(presentRoom).emit("read_message", {
     ...req.body.presentation,
   });
-  var group = req.body.group;
-  console.log(req.body);
-  if (group !== null) {
+
+  if (req.body.group) {
+    var group = req.body.group;
     var groupRoom = "group" + group.groupId;
+    console.log("controller present group", groupRoom);
     socketIoObject.socketIo.to(groupRoom).emit("read_message", {
       ...req.body.presentation,
     });
-  }
-  var oldGroup = req.body.oldGroup;
-  if (oldGroup !== null) {
-    var groupRoom = "group" + oldGroup?.groupId;
-    socketIoObject.socketIo.to(groupRoom).emit("read_message", {});
   }
   res.json({ vote: "ok" });
 };

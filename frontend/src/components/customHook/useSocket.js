@@ -4,12 +4,12 @@ import { io } from "socket.io-client";
 export const useSocket = (room, username) => {
     const [socket, setSocket] = useState();
     const [socketResponse, setSocketResponse] = useState({
-        room: "",
-        username: "",
-        option: "",
-        slideId: "",
-        // messageType: "",
-        // createdDateTime: "",
+        // room: "",
+        // username: "",
+        // option: "",
+        // slideId: "",
+        // // messageType: "",
+        // // createdDateTime: "",
     });
     const [isConnected, setIsConnected] = useState(false);
 

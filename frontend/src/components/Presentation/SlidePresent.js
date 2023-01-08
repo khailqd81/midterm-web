@@ -1,40 +1,44 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BarChart, Bar, LabelList, XAxis, ResponsiveContainer } from "recharts";
-import {
-    BsFillChatFill,
-    BsFillQuestionCircleFill,
-    BsArrowUp,
-    BsArrowDown,
-} from "react-icons/bs";
-import { FaArrowUp, FaArrowDown } from "react-icons/fa";
-import { AiFillCheckCircle } from "react-icons/ai";
-import { RiSurveyFill } from "react-icons/ri";
+
 import ReactLoading from "react-loading";
 import axios from "axios";
 import { useSocket } from "../customHook/useSocket";
 import landingImg from "../../landing-page-img.jpeg";
 import { refreshAccessToken } from "../utils/auth";
-import InfiniteScroll from "react-infinite-scroll-component";
 import { toast, ToastContainer } from "react-toastify";
-
+import MQABox from "./MQABox";
 function SlidePresent() {
     const params = useParams();
     const { socketResponse } = useSocket(`present${params.presentId}`, "khai");
+    const [role, setRole] = useState("member");
     const [isLogin, setIsLogin] = useState(false);
-    const [showBox, setShowBox] = useState("");
+
+    // C
     const [chatList, setChatList] = useState([]);
     const [answerList, setAnswerList] = useState([]);
-    const [hasMore, setHasMore] = useState(true);
     const [totalPage, setTotalPage] = useState(0);
-    const [isNotify, setIsNotify] = useState(true);
-    // Input question and message
-    const [chat, setChat] = useState("");
-    const [question, setQuestion] = useState("");
-    const [filterType, setFilterType] = useState("timeup");
+    const [slideDetail, setSlideDetail] = useState({
+        slideId: "",
+        heading: "",
+        optionList: [],
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [presentDetail, setPresentDetail] = useState({
+        group: null,
+        public: false,
+    });
+    const [groupDetail, setGroupDetail] = useState({
+        groupName: "",
+    });
+    const [answer, setAnswer] = useState({
+        optionName: "",
+        optionId: "",
+    });
+    const navigate = useNavigate();
     //
     const [errorMessages, setErrorMessages] = useState("");
-    const [page, setPage] = useState(0);
 
     useEffect(() => {
         async function checkAuth() {
@@ -67,102 +71,6 @@ function SlidePresent() {
         }
         checkAuth();
     }, []);
-
-    //
-
-    // const room = "public";
-    // const username = "khai";
-    // const [socket, setSocket] = useState();
-    // const [socketResponse, setSocketResponse] = useState({
-    //     room: "",
-    //     username: "",
-    //     option: "",
-    //     slideId: ""
-    //     // messageType: "",
-    //     // createdDateTime: "",
-    // });
-    // const [isConnected, setIsConnected] = useState(false);
-
-    // const sendData = useCallback(
-    //     (payload) => {
-    //         if (payload.message === "send_update") {
-    //             //console.log(payload.slide)
-    //             socket.emit("send_update", {
-    //                 room: room,
-    //                 username: username,
-    //                 slide: payload.slide
-    //                 //messageType: "CLIENT",
-    //             });
-    //         } else {
-    //             socket.emit("send_vote", {
-    //                 room: room,
-    //                 username: username,
-    //                 option: payload.option,
-    //                 slideId: payload.slideId
-    //                 //messageType: "CLIENT",
-    //             });
-    //         }
-
-    //     },
-    //     [socket, room]
-    // );
-
-    // useEffect(() => {
-    //     // console.log(`${process.env.REACT_APP_API_ENDPOINT}`)
-
-    //     const s = io("http://localhost:8085", {
-    //         reconnection: false,
-    //         query: `username=${username}&room=${room}`, //"room=" + room+",username="+username,
-    //     });
-
-    //     s.on("connect", () => {
-    //         console.log("connect from SlidePresent success")
-    //         setIsConnected(true)
-    //     }
-    //     );
-    //     setSocket(s);
-
-    //     s.on("read_message", (res) => {
-    //         console.log("res in slide Present:", res);
-    //         setSocketResponse({
-    //             room: res.room,
-    //             username: res.username,
-    //             slide: res?.slide,
-    //             option: res?.option,
-    //             slideId: res?.slideId
-    //             // content: res.content,
-    //             // messageType: res.messageType,
-    //             // createdDateTime: res.createdDateTime,
-    //         });
-    //     });
-
-    //     return () => {
-    //         console.log("disconnect")
-    //         s.disconnect();
-    //     };
-
-    // }, [room]);
-
-    //
-
-    const [slideDetail, setSlideDetail] = useState({
-        slideId: "",
-        heading: "",
-        optionList: [],
-    });
-    const [isLoading, setIsLoading] = useState(true);
-    // const [isPublic, setIsPublic] = useState(false);
-    const [isMember, setIsMember] = useState(false);
-    const [isOwner, setIsOwner] = useState(false);
-    const [presentDetail, setPresentDetail] = useState({
-        group: null,
-        public: false,
-    });
-    const [answer, setAnswer] = useState({
-        optionName: "",
-        optionId: "",
-    });
-    const navigate = useNavigate();
 
     function sortByDate(arraySort, isDesc) {
         console.log("arraySort", arraySort);
@@ -207,6 +115,7 @@ function SlidePresent() {
         console.log("sortedArray:", fullMessageArray);
         return fullMessageArray;
     }
+
     useEffect(() => {
         // Call api get chat list
         async function callApiGetChats(presentId, isPublic) {
@@ -287,6 +196,9 @@ function SlidePresent() {
                     //         }
                     //     }
                     // }
+                    if (response.data.group) {
+                        setGroupDetail(response.data.group);
+                    }
                     await callApiGetChats(present.presentId, isPublic);
                     let newSlideDetail = present.currentSlide;
                     newSlideDetail.optionList.sort(
@@ -294,10 +206,27 @@ function SlidePresent() {
                     );
                     // let sortedAnswer = [...response.data.answerList];
                     // console.log("sortedAnswer", sortedAnswer);
-                    let sortedAnswer = sortByDate([
-                        ...response.data.answerList,
-                    ]);
-                    setAnswerList(sortedAnswer);
+
+                    // Check role for authority to view submit result
+                    console.log("User role: ", response.data?.role);
+                    if (response.data?.role) {
+                        console.log("User role 2: ", response.data?.role);
+
+                        setRole(response.data.role);
+                        if (response.data.role !== "member") {
+                            // let sortedAnswer = sortByDate([
+                            //     ...response.data.answerList,
+                            // ]);
+                            setAnswerList(response.data.answerList);
+                        } else {
+                            setAnswerList([]);
+                        }
+                    } else {
+                        // let sortedAnswer = sortByDate([
+                        //     ...response.data.answerList,
+                        // ]);
+                        setAnswerList(response.data.answerList);
+                    }
                     setPresentDetail(present);
                     setSlideDetail(newSlideDetail);
                 }
@@ -330,6 +259,9 @@ function SlidePresent() {
             ) {
                 window.location.reload();
             }
+            if (socketResponse.answerList) {
+                setAnswerList(socketResponse.answerList);
+            }
             setPresentDetail(socketResponse);
             let newSlideDetail = socketResponse.currentSlide;
             newSlideDetail?.optionList.sort((a, b) => a.optionId - b.optionId);
@@ -347,7 +279,7 @@ function SlidePresent() {
                 return newChatList;
             });
         }
-    }, [socketResponse]);
+    }, [socketResponse, presentDetail.public, presentDetail?.group?.groupId]);
 
     const onInputChange = (e, optionId) => {
         setAnswer({
@@ -355,23 +287,6 @@ function SlidePresent() {
             optionId: optionId,
         });
     };
-
-    // Call api group information
-    // async function callApiSubmitOption() {
-    //     const accessToken = localStorage.getItem("access_token")
-    //     const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/slides/${slideDetail.slideId}`,
-    //         {
-    //             ...answer
-    //         }
-    //         , {
-    //             headers: { 'Authorization': "Bearer " + accessToken }
-
-    //         })
-
-    //     if (response.status === 200) {
-    //         console.log("submit success")
-    //     }
-    // }
 
     async function callApiIsMember(groupId) {
         const accessToken = localStorage.getItem("access_token");
@@ -393,276 +308,6 @@ function SlidePresent() {
         setIsLoading(false);
     }
 
-    const fetchMoreData = async () => {
-        let response = null;
-        try {
-            let newPage = page + 1;
-            if (newPage + 1 === totalPage) {
-                setHasMore(false);
-            }
-            if (isLogin) {
-                const accessToken = localStorage.getItem("access_token");
-                if (accessToken === null || accessToken === undefined) {
-                    return;
-                }
-                response = await axios.get(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentDetail.presentId}/${newPage}`,
-                    {
-                        headers: { Authorization: "Bearer " + accessToken },
-                    }
-                );
-            } else {
-                response = await axios.get(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentDetail.presentId}/${newPage}`
-                );
-            }
-
-            if (response !== null && response.status === 200) {
-                console.log("response chat list:", response.data.chatList);
-                setChatList((prev) => {
-                    let newChatList = [...prev, ...response.data.chatList];
-                    console.log("newChatlist: ", newChatList);
-                    return newChatList;
-                });
-            }
-            setPage(newPage);
-            setIsLoading(false);
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const handleAddNewMessage = async () => {
-        let response = null;
-
-        try {
-            if (isLogin) {
-                const accessToken = localStorage.getItem("access_token");
-                if (accessToken === null || accessToken === undefined) {
-                    return;
-                }
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentDetail.presentId}`,
-                    {
-                        content: chat,
-                    },
-                    {
-                        headers: { Authorization: "Bearer " + accessToken },
-                    }
-                );
-            } else {
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/chats/public/${presentDetail.presentId}`,
-                    {
-                        content: chat,
-                    }
-                );
-            }
-
-            if (response !== null && response.status === 200) {
-                console.log("new Chat: ", response.data.chat);
-                //let addedChat = response.data.chat;
-                setIsNotify(false);
-                // setChatList((prev) => {
-                //     let newChatList = [...prev];
-                //     newChatList.unshift(addedChat);
-                //     return newChatList;
-                // });
-            }
-            setChat("");
-            setIsLoading(false);
-        } catch (error) {
-            setChat("");
-            console.log(error);
-        }
-    };
-
-    const handleAddNewQuestion = async () => {
-        let response = null;
-
-        try {
-            if (isLogin) {
-                const accessToken = localStorage.getItem("access_token");
-                if (accessToken === null || accessToken === undefined) {
-                    return;
-                }
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/${presentDetail.presentId}`,
-                    {
-                        content: question,
-                    },
-                    {
-                        headers: { Authorization: "Bearer " + accessToken },
-                    }
-                );
-            } else {
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/public/${presentDetail.presentId}`,
-                    {
-                        content: question,
-                    }
-                );
-            }
-
-            if (response !== null && response.status === 200) {
-                console.log("new Question: ", response.data.question);
-                //let addedChat = response.data.chat;
-                // setChatList((prev) => {
-                //     let newChatList = [...prev];
-                //     newChatList.unshift(addedChat);
-                //     return newChatList;
-                // });
-            }
-            setQuestion("");
-        } catch (error) {
-            setQuestion("");
-            console.log(error);
-        }
-    };
-
-    // asc true sort newest to oldest else reverse
-    const sortByCreatedAt = (arr, asc) => {
-        let sortedData = null;
-        if (asc) {
-            sortedData = arr.sort((a, b) => a.createdAt - b.createdAt);
-        } else {
-            sortedData = arr.sort((a, b) => b.createdAt - a.createdAt);
-        }
-        return sortedData;
-    };
-
-    // isAnswered true sort answer to unanswer (sort by newest to oldest in each group) else reverse
-    const sortByAnswered = (arr, isAnswered) => {
-        let answeredArr = null;
-        let unansweredArr = null;
-        answeredArr = arr.filter((e) => e.answer);
-        unansweredArr = arr.filter((e) => !e.answer);
-        answeredArr.sort((a, b) => b.createdAt - a.createdAt);
-        unansweredArr.sort((a, b) => b.createdAt - a.createdAt);
-        if (isAnswered) {
-            return [...answeredArr, ...unansweredArr];
-        } else {
-            return [...unansweredArr, ...answeredArr];
-        }
-    };
-
-    // asc true sort most vote to lowest vote else reverse
-    const sortByVote = (arr, asc) => {
-        let sortedData = null;
-        if (asc) {
-            sortedData = arr.sort((a, b) => a.vote - b.vote);
-        } else {
-            sortedData = arr.sort((a, b) => b.vote - a.vote);
-        }
-        return sortedData;
-    };
-
-    const sortQuestionList = (arr) => {
-        switch (filterType) {
-            case "voteup": {
-                return sortByVote(arr, false);
-            }
-            case "votedown": {
-                return sortByVote(arr, true);
-            }
-            case "answered": {
-                return sortByAnswered(arr, true);
-            }
-            case "unanswered": {
-                return sortByAnswered(arr, false);
-            }
-            case "timeup": {
-                return sortByCreatedAt(arr, false);
-            }
-            case "timedown": {
-                return sortByCreatedAt(arr, true);
-            }
-            default: {
-                return sortByCreatedAt(arr, false);
-            }
-        }
-    };
-    const handleUpVote = async (questionId) => {
-        let response = null;
-
-        try {
-            if (isLogin) {
-                const accessToken = localStorage.getItem("access_token");
-                if (accessToken === null || accessToken === undefined) {
-                    return;
-                }
-                response = await axios.put(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/${questionId}/vote`,
-                    {},
-                    {
-                        headers: { Authorization: "Bearer " + accessToken },
-                    }
-                );
-            } else {
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/public/${questionId}/vote`,
-                    {}
-                );
-            }
-
-            if (response !== null && response.status === 200) {
-                console.log("new Question: ", response.data.question);
-                //let addedChat = response.data.chat;
-                // setChatList((prev) => {
-                //     let newChatList = [...prev];
-                //     newChatList.unshift(addedChat);
-                //     return newChatList;
-                // });
-            }
-            setQuestion("");
-        } catch (error) {
-            setQuestion("");
-            console.log(error);
-        }
-    };
-
-    const handleMarkAnswer = async (questionId) => {
-        let response = null;
-
-        try {
-            if (isLogin) {
-                const accessToken = localStorage.getItem("access_token");
-                if (accessToken === null || accessToken === undefined) {
-                    return;
-                }
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/${presentDetail.presentId}`,
-                    {
-                        content: question,
-                    },
-                    {
-                        headers: { Authorization: "Bearer " + accessToken },
-                    }
-                );
-            } else {
-                response = await axios.post(
-                    `${process.env.REACT_APP_API_ENDPOINT}/api/questions/public/${presentDetail.presentId}`,
-                    {
-                        content: question,
-                    }
-                );
-            }
-
-            if (response !== null && response.status === 200) {
-                console.log("new Question: ", response.data.question);
-                //let addedChat = response.data.chat;
-                // setChatList((prev) => {
-                //     let newChatList = [...prev];
-                //     newChatList.unshift(addedChat);
-                //     return newChatList;
-                // });
-            }
-            setQuestion("");
-        } catch (error) {
-            setQuestion("");
-            console.log(error);
-        }
-    };
     const handleSubmitForm = async (e) => {
         e.preventDefault();
         // console.log({
@@ -710,35 +355,6 @@ function SlidePresent() {
         );
     }
 
-    // if (!presentDetail?.public) {
-    //     if (presentDetail?.group === null) {
-    //         return (
-    //             <div className="relative mx-auto max-w-[72vw] h-screen ">
-    //                 <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
-    //                     Present is not presenting
-    //                 </div>
-    //                 <img
-    //                     src={landingImg}
-    //                     className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
-    //                     alt="Slide presentation"
-    //                 />
-    //             </div>
-    //         );
-    //     } else if (!isMember) {
-    //         return (
-    //             <div className="relative mx-auto max-w-[72vw] h-screen ">
-    //                 <div className="text-red-600 absolute z-10 w-[60%] text-center uppercase text-2xl left-1/2 top-[16%] bg-white border border-red-400 -translate-x-1/2 shadow-lg rounded-lg p-4">
-    //                     You don't have permission to access this presentation
-    //                 </div>
-    //                 <img
-    //                     src={landingImg}
-    //                     className="absolute top-1/2 -translate-y-2/4 w-full shadow-lg rounded-lg"
-    //                     alt="Slide presentation"
-    //                 />
-    //             </div>
-    //         );
-    //     }
-    // }
     if (errorMessages.length > 1) {
         return (
             <div className="relative mx-auto max-w-[72vw] h-screen ">
@@ -807,8 +423,27 @@ function SlidePresent() {
                 </ul>
             </header>
             <h1 className="font-bold text-6xl text-center mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">
-                KahooClone
+                KahooPaTiKa
             </h1>
+            <div className="md:px-8 text-xl">
+                {presentDetail.public ? (
+                    <>
+                        <span className="italic mr-2">Presenting:</span>
+                        <span className="font-bold uppercase border shadow p-1 rounded-lg select-none">
+                            Public
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        <span className="italic mr-2">
+                            Presenting in group:
+                        </span>
+                        <span className="font-bold uppercase border shadow p-1 rounded-lg select-none">
+                            {groupDetail?.groupName}
+                        </span>
+                    </>
+                )}
+            </div>
             <div className="flex justify-between flex-wrap flex-row md:px-8 md:py-10 md:pb-20 md:mx-4 p-2 h-[90vh]">
                 <div className="basis-full md:basis-1/2 border w-full h-full bg-white shadow-xl rounded-lg">
                     <div className="mt-4 ml-4 mb-4 text-xl font-bold">
@@ -893,388 +528,16 @@ function SlidePresent() {
                     </button>
                 </form>
             </div>
-            <div>
-                {showBox === "chat" && (
-                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[324px]">
-                        <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
-                            Messages
-                            <span
-                                className="p-1 cursor-pointer"
-                                onClick={() => setShowBox("")}
-                            >
-                                X
-                            </span>
-                        </div>
-                        <div
-                            id="scrollableDiv"
-                            style={{
-                                height: "300px",
-                                overflow: "auto",
-                                display: "flex",
-                                flexDirection: "column-reverse",
-                            }}
-                        >
-                            <InfiniteScroll
-                                dataLength={chatList.length}
-                                next={fetchMoreData}
-                                hasMore={hasMore}
-                                scrollableTarget="scrollableDiv"
-                                inverse={true}
-                                loader={
-                                    <p className="text-center">Loading ...</p>
-                                }
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column-reverse",
-                                }}
-                                endMessage={
-                                    <p style={{ textAlign: "center" }}>
-                                        <b>Yay! You have seen it all</b>
-                                    </p>
-                                }
-                            >
-                                <ul className="flex flex-col-reverse">
-                                    {chatList.length > 0 &&
-                                        sortByDate(chatList, true).map(
-                                            (chatByDate, index) => {
-                                                let list =
-                                                    chatByDate[
-                                                        Object.keys(
-                                                            chatByDate
-                                                        )[0]
-                                                    ];
-                                                console.log(
-                                                    chatByDate[
-                                                        Object.keys(
-                                                            chatByDate
-                                                        )[0]
-                                                    ]
-                                                );
-                                                return (
-                                                    <>
-                                                        {list.map((a) => {
-                                                            return (
-                                                                <li
-                                                                    className="px-4 py-2 mt-1 flex items-center"
-                                                                    key={
-                                                                        a.chatId
-                                                                    }
-                                                                >
-                                                                    <span
-                                                                        className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
-                                                                        title={
-                                                                            a
-                                                                                .user
-                                                                                .firstName
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            a
-                                                                                .user
-                                                                                .firstName[0]
-                                                                        }
-                                                                    </span>
-                                                                    <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
-                                                                        {
-                                                                            a.message
-                                                                        }
-                                                                    </span>
-                                                                    <span className="ml-auto text-xs">
-                                                                        {new Date(
-                                                                            a.createdAt
-                                                                        ).toLocaleTimeString()}
-                                                                    </span>
-                                                                </li>
-                                                            );
-                                                        })}
-                                                        <div className="text-center text-sm">
-                                                            {index ===
-                                                            chatList.length - 1
-                                                                ? "Today"
-                                                                : new Date(
-                                                                      Object.keys(
-                                                                          chatByDate
-                                                                      )[0]
-                                                                  )
-                                                                      .toLocaleString(
-                                                                          "vi-VN"
-                                                                      )
-                                                                      .slice(
-                                                                          10
-                                                                      )}
-                                                        </div>
-                                                    </>
-                                                );
-                                            }
-                                        )}
-                                </ul>
-                            </InfiniteScroll>
-                        </div>
-                        <div className="flex justify-between px-4 mt-auto mb-2">
-                            <input
-                                placeholder="Add new chat"
-                                className="border border-sky-400 rounded-2xl px-2 mr-2"
-                                value={chat}
-                                onChange={(e) => setChat(e.target.value)}
-                            />
-                            <button
-                                className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-2xl px-4 py-2"
-                                onClick={handleAddNewMessage}
-                            >
-                                Submit
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {showBox === "question" && (
-                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[600px]">
-                        <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
-                            Questions
-                            <span
-                                className="p-1 cursor-pointer"
-                                onClick={() => setShowBox("")}
-                            >
-                                X
-                            </span>
-                        </div>
-                        <div className="flex font-bold px-4 py-1 items-center">
-                            Filter
-                            {filterType === "voteup" ? (
-                                <div
-                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
-                                    onClick={() => setFilterType("votedown")}
-                                >
-                                    <span className="mr-2">Vote</span>
-                                    <FaArrowUp size={14} />
-                                </div>
-                            ) : filterType === "votedown" ? (
-                                <div
-                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
-                                    onClick={() => setFilterType("voteup")}
-                                >
-                                    <span className="mr-2">Vote</span>
-                                    <FaArrowDown size={14} />
-                                </div>
-                            ) : (
-                                <div
-                                    className="border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none"
-                                    onClick={() => setFilterType("voteup")}
-                                >
-                                    <span>Vote</span>
-                                </div>
-                            )}
-                            {filterType === "answered" ? (
-                                <div
-                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
-                                    onClick={() => setFilterType("unanswered")}
-                                >
-                                    <span className="mr-2">Answered</span>
-                                </div>
-                            ) : filterType === "unanswered" ? (
-                                <div
-                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
-                                    onClick={() => setFilterType("answered")}
-                                >
-                                    <span className="mr-2">Unanswered</span>
-                                </div>
-                            ) : (
-                                <div
-                                    className="border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none"
-                                    onClick={() => setFilterType("answered")}
-                                >
-                                    <span>Answered</span>
-                                </div>
-                            )}
-                            {filterType === "timeup" ? (
-                                <div
-                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
-                                    onClick={() => setFilterType("timedown")}
-                                >
-                                    <span className="mr-2">Time asked</span>
-                                    <FaArrowUp size={14} />
-                                </div>
-                            ) : filterType === "timedown" ? (
-                                <div
-                                    className="flex items-center border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none bg-green-500 text-white"
-                                    onClick={() => setFilterType("timeup")}
-                                >
-                                    <span className="mr-2">Time asked</span>
-                                    <FaArrowDown size={14} />
-                                </div>
-                            ) : (
-                                <div
-                                    className="border px-2 py-1 ml-2 rounded-lg bg-slate-100 cursor-pointer select-none"
-                                    onClick={() => setFilterType("timeup")}
-                                >
-                                    <span>Time asked</span>
-                                </div>
-                            )}
-                        </div>
-                        <ul className=" overflow-y-scroll h-[80%]">
-                            {presentDetail?.questionList.length > 0 &&
-                                sortQuestionList(
-                                    presentDetail.questionList
-                                ).map((q) => {
-                                    return (
-                                        <li
-                                            className="px-4 py-2 mt-1 flex items-center"
-                                            key={q.questionId}
-                                        >
-                                            <span
-                                                className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
-                                                title={q.user.firstName}
-                                            >
-                                                {q.user.firstName[0]}
-                                            </span>
-                                            <span className="border px-2 py-2 rounded-lg bg-slate-100 basis-1/2 mr-2">
-                                                {q.content}
-                                            </span>
-                                            <span className="border px-2 py-2 rounded-lg bg-slate-100 mr-2">
-                                                {q.vote}
-                                            </span>
-                                            <button
-                                                className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-lg  px-2 py-2 mr-2 hover:text-white"
-                                                onClick={() =>
-                                                    handleUpVote(q.questionId)
-                                                }
-                                            >
-                                                Vote
-                                            </button>
-                                            {q.answered ? (
-                                                <div className="">
-                                                    <AiFillCheckCircle
-                                                        className="text-green-500"
-                                                        size={24}
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    className=""
-                                                    onClick={handleMarkAnswer}
-                                                >
-                                                    <AiFillCheckCircle
-                                                        className="text-stone-700 hover:text-green-500 hover:shadow-lg"
-                                                        size={24}
-                                                    />
-                                                </button>
-                                            )}
 
-                                            <span className="ml-auto text-xs">
-                                                {new Date(
-                                                    q.createdAt
-                                                ).toLocaleString("vi-VN")}
-                                            </span>
-                                        </li>
-                                    );
-                                })}
-                        </ul>
-                        <div className="flex justify-between px-4 mt-auto mb-2">
-                            <input
-                                placeholder="Add new question"
-                                className="border border-sky-400 rounded-2xl px-2 mr-2"
-                                value={question}
-                                onChange={(e) => setQuestion(e.target.value)}
-                            />
-                            <button
-                                className="bg-[#61dafb] hover:bg-[#61fbe2] rounded-2xl px-4 py-2"
-                                onClick={handleAddNewQuestion}
-                            >
-                                Submit
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {showBox === "answer" && (
-                    <div className="flex flex-col fixed z-10 bottom-[10px] right-[70px] bg-white rounded-lg shadow h-[400px] w-[324px]">
-                        <div className="flex justify-between bg-[#61dafb] py-2 px-4 rounded-t-lg text-white font-bold">
-                            Answer Result
-                            <span
-                                className="p-1 cursor-pointer"
-                                onClick={() => setShowBox("")}
-                            >
-                                X
-                            </span>
-                        </div>
-                        <ul className=" overflow-y-scroll h-[80%]">
-                            {answerList.length > 0 &&
-                                answerList.map((answersByDate, index) => {
-                                    let list =
-                                        answersByDate[
-                                            Object.keys(answersByDate)[0]
-                                        ];
-                                    return (
-                                        <>
-                                            <div className="text-center text-sm">
-                                                {index === answerList.length - 1
-                                                    ? "Today"
-                                                    : new Date(
-                                                          Object.keys(
-                                                              answersByDate
-                                                          )[0]
-                                                      )
-                                                          .toLocaleString(
-                                                              "vi-VN"
-                                                          )
-                                                          .slice(10)}
-                                            </div>
-                                            {list.map((a) => {
-                                                return (
-                                                    <li
-                                                        className="px-4 py-2 mt-1 flex items-center"
-                                                        key={a.answerId}
-                                                    >
-                                                        <span
-                                                            className="bg-[#61dafb] px-2 py-1 rounded-full uppercase cursor-default mr-2"
-                                                            title={
-                                                                a.user.firstName
-                                                            }
-                                                        >
-                                                            {
-                                                                a.user
-                                                                    .firstName[0]
-                                                            }
-                                                        </span>
-                                                        <span className="border px-2 py-2 rounded-lg bg-slate-100 max-w-[70%]">
-                                                            {
-                                                                a.option
-                                                                    .optionName
-                                                            }
-                                                        </span>
-                                                        <span className="ml-auto text-xs">
-                                                            {new Date(
-                                                                a.createdAt
-                                                            ).toLocaleTimeString()}
-                                                        </span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </>
-                                    );
-                                })}
-                        </ul>
-                    </div>
-                )}
-            </div>
-            <div className="fixed right-[10px] bottom-[10px]">
-                <div
-                    className="bg-[#61dafb] rounded-full p-3  hover:shadow-2xl shadow cursor-pointer"
-                    onClick={() => setShowBox("chat")}
-                >
-                    <BsFillChatFill size={36} color="#ffffff" />
-                </div>
-                <div
-                    className="bg-[#61dafb] rounded-full p-3  hover:shadow-2xl shadow my-2 cursor-pointer"
-                    onClick={() => setShowBox("question")}
-                >
-                    <BsFillQuestionCircleFill size={36} color="#ffffff" />
-                </div>
-                <div
-                    className="bg-[#61dafb] rounded-full p-3  hover:shadow-2xl shadow cursor-pointer"
-                    onClick={() => setShowBox("answer")}
-                >
-                    <RiSurveyFill size={36} color="#ffffff" />
-                </div>
-            </div>
+            <MQABox
+                isLogin={isLogin}
+                role={presentDetail.public ? "owner" : role}
+                chatList={chatList}
+                totalPage={totalPage}
+                setChatList={setChatList}
+                answerList={answerList}
+                presentDetail={presentDetail}
+            />
         </div>
     );
 }

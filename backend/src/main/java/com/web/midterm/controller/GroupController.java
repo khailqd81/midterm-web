@@ -88,13 +88,19 @@ public class GroupController {
 	// Get member of a group by groupId
 	@GetMapping("/{groupId}")
 	public ResponseEntity<?> getGroupMembers(@PathVariable int groupId) {
+		User authUser = userService.getCurrentAuthUser();
 		Group group = groupService.findById(groupId);
 		if (group == null) {
 			Map<String, String> jsonResponse = new HashMap<>();
 			jsonResponse.put("message", "Group Id not found.");
 			return ResponseEntity.badRequest().body(jsonResponse);
 		}
-
+		
+		// Get role in group of auth user
+		UserGroup userGroup = groupService.findByUserIdAndGroupId(authUser.getUserId(), groupId);
+		GroupRole role = userGroup.getGroupRole();
+		String roleName = role.getRoleName();
+		//
 		List<UserGroup> userGroups = groupService.getMembers(groupId);
 		List<UserGroupResponse> users = new ArrayList<>();
 		for (UserGroup g : userGroups) {
@@ -122,6 +128,7 @@ public class GroupController {
 //		result.put("member", memberGroup);
 		Map<String, Object> result = new HashMap<>();
 		result.put("present", group.getPresent());
+		result.put("role", roleName);
 		result.put("groupId", group.getGroupId());
 		result.put("groupLink", group.getGroupLink());
 		result.put("groupName", group.getGroupName());

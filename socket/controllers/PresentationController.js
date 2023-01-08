@@ -10,17 +10,32 @@ module.exports.handlePresentationVote = (req, res, next) => {
   var present = req.body.presentation;
   var presentRoom = "present" + present.presentId;
   console.log("controller present presentR", presentRoom);
-  socketIoObject.socketIo.to(presentRoom).emit("read_message", {
-    ...req.body.presentation,
-  });
+  if (req.body.answerList) {
+    socketIoObject.socketIo.to(presentRoom).emit("read_message", {
+      ...req.body.presentation,
+      answerList: req.body.answerList,
+    });
+  } else {
+    socketIoObject.socketIo.to(presentRoom).emit("read_message", {
+      ...req.body.presentation,
+    });
+  }
+
   var group = req.body.group;
   console.log(req.body);
   if (group !== null) {
     var groupRoom = "group" + group.groupId;
     console.log("controller present group", groupRoom);
-    socketIoObject.socketIo.to(groupRoom).emit("read_message", {
-      ...req.body.presentation,
-    });
+    if (req.body.answerList) {
+      socketIoObject.socketIo.to(groupRoom).emit("read_message", {
+        ...req.body.presentation,
+        answerList: req.body.answerList,
+      });
+    } else {
+      socketIoObject.socketIo.to(groupRoom).emit("read_message", {
+        ...req.body.presentation,
+      });
+    }
   }
   var oldGroup = req.body.oldGroup;
   if (oldGroup !== null) {

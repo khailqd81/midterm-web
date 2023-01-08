@@ -140,25 +140,33 @@ public class PresentationController {
 		if (g== null) {
 			throw new Exception("Presentation is not presenting");
 		}
+		
+		String roleName = "member";
 		if (g != null) {
 			UserGroup userGroup = groupService.findByUserIdAndGroupId(user.getUserId(), g.getGroupId());
 			if (userGroup == null) {
 				throw new Exception("You don't have permission to access this presentation");
 			}
+			GroupRole role = userGroup.getGroupRole();
+			roleName = role.getRoleName();
 		}
 		
 		// Get answerList of the current slide
 		List<UserAnswer> answerList = new ArrayList<>();
-		List<Option> optionList = p.getCurrentSlide().getOptionList();
-		if (optionList != null && optionList.size() > 0) {
-			for (Option opt : optionList) {
-				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
-				answerList.addAll(optAnswer);
+		if (!roleName.equals("member")) {
+			List<Option> optionList = p.getCurrentSlide().getOptionList();
+			if (optionList != null && optionList.size() > 0) {
+				for (Option opt : optionList) {
+					List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+					answerList.addAll(optAnswer);
+				}
 			}
 		}
+
 		
 		Map<String, Object> message = new HashMap<>();
 		message.put("presentation", p);
+		message.put("role", roleName);
 		message.put("answerList", answerList);
 		message.put("group", p.getGroup());
 		return ResponseEntity.ok(message);
@@ -269,7 +277,17 @@ public class PresentationController {
 
 		p.setCurrentSlide(s);
 		presentationService.save(p);
-
+		
+		// Get answerList with currentSlide
+		List<Option> optionList = p.getCurrentSlide().getOptionList();
+		List<UserAnswer> userAnswerList = new ArrayList<>();
+		if (optionList != null && optionList.size() > 0) {
+			for (Option opt : optionList) {
+				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+				userAnswerList.addAll(optAnswer);
+			}
+		}
+		
 		// Call socket server
 		// request url
 		String url = socketUrl + "/presents";
@@ -280,6 +298,7 @@ public class PresentationController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
+		map.put("answerList", userAnswerList);
 		map.put("group", p.getGroup());
 		map.put("room", p.getPresentId());
 		// map.put("room", p.getPresentId());

@@ -10,9 +10,13 @@ import ReactLoading from "react-loading";
 import { toast } from "react-toastify";
 import { useSocket } from "../customHook/useSocket";
 import { BarChart, Bar, LabelList, XAxis, ResponsiveContainer } from "recharts";
-
+import MQABox from "../Presentation/MQABox";
 export default function GroupInfo() {
     //const { socketResponse } = useSocket("public", "khai");
+    const [role, setRole] = useState("member");
+    const [isLogin, setIsLogin] = useState(false);
+    const [chatList, setChatList] = useState([]);
+    const [totalPage, setTotalPage] = useState(0);
 
     /* Component State */
     const [inviteMail, setInviteMail] = useState("");
@@ -38,7 +42,7 @@ export default function GroupInfo() {
     const navigate = useNavigate();
     const params = useParams();
     useEffect(() => {
-        console.log("Group Info: ", socketResponse);
+        console.log("Group Info socket: ", socketResponse);
         // If stop presenting
         if (
             socketResponse === null ||
@@ -57,7 +61,12 @@ export default function GroupInfo() {
         let userAnswer = socketResponse?.userAnswer;
         if (userAnswer !== null && Object.keys(socketResponse).length > 0) {
             setAnswerList((prev) => {
-                let newAnswerList = [...prev];
+                console.log("preList", prev);
+                let newAnswerList = [];
+                if (prev.length > 0) {
+                    newAnswerList = [...prev];
+                }
+
                 newAnswerList.unshift(userAnswer);
                 return newAnswerList;
             });
@@ -128,8 +137,14 @@ export default function GroupInfo() {
                         localStorage.getItem("userId").toString()
             );
             let present = response.data.present;
+            if (response.data.role) {
+                setRole(response.data.role);
+            } else {
+                setRole("member");
+            }
             if (present !== null) {
                 let newSlideDetail = present.currentSlide;
+                await callApiGetChats(present.presentId);
                 if (present.currentSlide !== null && index !== -1) {
                     let userAnswerResponse = await axios.get(
                         `${process.env.REACT_APP_API_ENDPOINT}/api/slides/${present.currentSlide.slideId}/answers`,
@@ -138,9 +153,9 @@ export default function GroupInfo() {
                         }
                     );
                     let answerList = userAnswerResponse.data.answerList;
-                    if (answerList !== null && answerList.length > 0) {
-                        answerList.sort((a, b) => b.createdAt - a.createdAt);
-                    }
+                    // if (answerList !== null && answerList.length > 0) {
+                    //     answerList.sort((a, b) => b.createdAt - a.createdAt);
+                    // }
                     setAnswerList(answerList);
                 }
 
@@ -219,7 +234,31 @@ export default function GroupInfo() {
             await callApiGroupInfo();
         }
     }
+    async function callApiGetChats(presentId) {
+        let response = null;
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            if (accessToken === null || accessToken === undefined) {
+                setIsLoading(false);
+                return;
+            }
+            response = await axios.get(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/chats/${presentId}/0`,
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
+            );
 
+            if (response !== null && response.status === 200) {
+                console.log("chat list: ", response.data.chatList);
+                setTotalPage(response.data.totalPage);
+                setChatList(response.data.chatList);
+            }
+            setIsLoading(false);
+        } catch (error) {
+            console.log(error);
+        }
+    }
     useEffect(() => {
         getGroupInfo();
     }, [params.groupId, navigate]);
@@ -323,6 +362,7 @@ export default function GroupInfo() {
         );
     }
 
+    console.log("answerList", answerList);
     return (
         <div>
             <div className="flex">
@@ -512,31 +552,42 @@ export default function GroupInfo() {
                                 </Bar>
                             </BarChart>
                         </div>
-
-                        {answerList !== null && answerList.length > 0 && (
+                        <MQABox
+                            isLogin={true}
+                            role={role}
+                            chatList={chatList}
+                            totalPage={totalPage}
+                            setChatList={setChatList}
+                            answerList={answerList}
+                            presentDetail={groupInfo.present}
+                        />
+                        {/* {answerList !== null && answerList.length > 0 && (
                             <ul className="ml-4 max-h-[200px] overflow-y-scroll ">
                                 <span className="font-bold">Answer list:</span>
 
-                                {answerList.map((an) => {
-                                    return (
-                                        <li
-                                            key={an.answerId}
-                                            className="flex justify-between border px-4 py-1 shadow my-1 rounded-lg italic"
-                                        >
-                                            <span>{an.option.optionName}</span>
-                                            <span className="mx-2">
-                                                {an.user.firstName}
-                                            </span>
-                                            <span>
-                                                {new Date(
-                                                    an.createdAt
-                                                ).toLocaleString()}
-                                            </span>
-                                        </li>
-                                    );
-                                })}
+                                {answerList &&
+                                    answerList.map((an) => {
+                                        return (
+                                            <li
+                                                key={an.answerId}
+                                                className="flex justify-between border px-4 py-1 shadow my-1 rounded-lg italic"
+                                            >
+                                                <span>
+                                                    {an.option.optionName}
+                                                </span>
+                                                <span className="mx-2">
+                                                    {an.user.firstName}
+                                                </span>
+                                                <span>
+                                                    {new Date(
+                                                        an.createdAt
+                                                    ).toLocaleString()}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
                             </ul>
-                        )}
+                        )} */}
                     </div>
                 </div>
             )}
