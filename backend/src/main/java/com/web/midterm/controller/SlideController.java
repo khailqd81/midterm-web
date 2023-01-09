@@ -82,9 +82,12 @@ public class SlideController {
 		if (p == null) {
 			throw new Exception("Presentation not found");
 		}
-
 		s.setPresentation(p);
 		slideService.save(s);
+		
+		p.setCurrentSlide(s);
+		presentationService.save(p);
+		
 		Map<String, Slide> message = new HashMap<>();
 		message.put("slide", s);
 		return ResponseEntity.ok(message);

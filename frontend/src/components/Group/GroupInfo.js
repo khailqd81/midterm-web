@@ -696,9 +696,7 @@ export default function GroupInfo() {
                                                         <option value={m.role}>
                                                             {m.role}
                                                         </option>
-                                                        <option value="owner">
-                                                            Owner
-                                                        </option>
+
                                                         <option value="co-owner">
                                                             Co-owner
                                                         </option>
@@ -736,9 +734,7 @@ export default function GroupInfo() {
                                                         <option value={m.role}>
                                                             {m.role}
                                                         </option>
-                                                        <option value="owner">
-                                                            Owner
-                                                        </option>
+
                                                         <option value="co-owner">
                                                             Member
                                                         </option>
