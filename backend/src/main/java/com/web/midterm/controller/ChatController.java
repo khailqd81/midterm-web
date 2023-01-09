@@ -36,6 +36,7 @@ public class ChatController {
 
 		Chat addedChat = chatService.addNewMessage(presentId, payload.get("content"));
 		Presentation p = addedChat.getPresent();
+		
 		// call socket server
 		// request url
 		String url = socketUrl + "/chats";
@@ -44,8 +45,7 @@ public class ChatController {
 		map.put("presentation", p);
 		map.put("group", p.getGroup());
 		map.put("chat", addedChat);
-//		map.put("oldGroup", oldGroup);
-//		map.put("room", p.getPresentId());
+
 //		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
@@ -68,10 +68,8 @@ public class ChatController {
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
 		map.put("chat", addedChat);
-		// map.put("group", p.getGroup());
-//		map.put("oldGroup", oldGroup);
-//		map.put("room", p.getPresentId());
-//		// send POST request
+
+		// send POST request
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		//

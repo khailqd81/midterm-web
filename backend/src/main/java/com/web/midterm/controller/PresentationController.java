@@ -99,7 +99,6 @@ public class PresentationController {
 //				presentationList.add(p);
 //			}
 //		}
-		// System.out.println(coList);
 		// List<Presentation> presentationList =
 		// presentationService.findByUserUserId(user.getUserId());
 		// List<Presentation> coPresentationList =

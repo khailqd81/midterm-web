@@ -74,17 +74,7 @@ public class SecurityConfig {
 		http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
-
-//	@Bean
-//	public AuthenticationManager authManager(HttpSecurity http) 
-//	  throws Exception {
-//	    return http.getSharedObject(AuthenticationManagerBuilder.class)
-//	      .userDetailsService(userDetailsService)
-//	      .passwordEncoder(bCryptPasswordEncoder)
-//	      .and()
-//	      .build();
-//	}
-
+	
 	@Bean
 	AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
 			throws Exception {
