@@ -259,6 +259,9 @@ function SlidePresent() {
             ) {
                 window.location.reload();
             }
+            if (socketResponse.userAnswer) {
+                setAnswerList((prev) => [...prev, socketResponse.userAnswer]);
+            }
             if (socketResponse.answerList) {
                 setAnswerList(socketResponse.answerList);
             }

@@ -115,7 +115,7 @@ function Home() {
     const handleCreateGroup = async (e) => {
         let accessToken = localStorage.getItem("access_token");
         if (accessToken == null) {
-            navigate("/login");
+            return;
         }
         // Validate input
         if (groupName == null || groupName.trim().length <= 0) {
@@ -130,7 +130,7 @@ function Home() {
                 await refreshAccessToken();
                 await callApiCreateGroup();
             } catch (error) {
-                navigate("/login");
+                return;
             }
         } finally {
             e.target.disabled = false;
