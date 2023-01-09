@@ -57,4 +57,13 @@ public class VerifytokenServiceImpl implements VerifytokenService {
 		mailSender.send(email);
 	}
 
+	@Override
+	public Verifytoken findByToken(String token) {
+		Optional<Verifytoken> verifytoken =verifytokenRepository.findByToken(token);
+		if (verifytoken.isPresent()) {
+			return verifytoken.get();
+		}
+		return null;
+	}
+
 }

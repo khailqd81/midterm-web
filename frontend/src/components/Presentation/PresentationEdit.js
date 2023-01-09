@@ -568,7 +568,7 @@ function PresentationEdit() {
         <>
             <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[80vh]">
                 <FullScreen handle={handle}>
-                    <div className="border flex flex-col justify-center h-full bg-white full-screenable-node ">
+                    <div className="border flex flex-col justify-center h-full bg-white full-screenable-node min-h-[200px]">
                         <div className="mt-8 ml-4 mb-4 text-xl font-bold">
                             {currentSlide?.heading}
                         </div>
@@ -595,7 +595,7 @@ function PresentationEdit() {
                                 </BarChart>
                             </div>
                         )}
-                        <div>
+                        {/* <div>
                             <ul className="h-[142px] overflow-scroll py-2 px-8">
                                 <span className="italic mb-4">
                                     Answer submitted:
@@ -622,7 +622,7 @@ function PresentationEdit() {
                                         );
                                     })}
                             </ul>
-                        </div>
+                        </div> */}
                     </div>
                 </FullScreen>
                 {currentSlide?.slideId && (

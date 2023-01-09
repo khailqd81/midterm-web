@@ -62,7 +62,10 @@ public class SecurityConfig {
 		http.authorizeHttpRequests().antMatchers("/api/login").permitAll().antMatchers("/api/user/register").permitAll()
 				.antMatchers("/api/presents/vote/**").permitAll()
 				.antMatchers("/api/slides/vote/**").permitAll()
-				.antMatchers("/api/user/confirm").permitAll().antMatchers("/api/user/oauth2").permitAll()
+				.antMatchers("/api/user/confirm").permitAll()
+				.antMatchers("/api/user/renewPassword").permitAll()
+				.antMatchers("/api/user/forgotPassword").permitAll()
+				.antMatchers("/api/user/oauth2").permitAll()
 				.antMatchers("/api/user/refreshToken").permitAll().antMatchers("/api/groups/**").authenticated()
 				.antMatchers("/api/user/**").authenticated();
 		// http.authorizeHttpRequests().anyRequest().authenticated();

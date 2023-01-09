@@ -4,12 +4,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMailMessage;
 import org.springframework.stereotype.Service;
 
 import com.web.midterm.entity.Group;
@@ -67,7 +70,8 @@ public class GroupServiceImpl implements GroupService {
 		if (roleName.equals("owner")) {
 			group.setUser(user);
 			groupRepository.save(group);
-			UserGroup userGroup = userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(), groupId);
+			UserGroup userGroup = userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(),
+					groupId);
 			GroupRole memberRole = groupRoleRepository.findByRoleName("co-owner");
 			userGroup.setGroupRole(memberRole);
 			userGroupRepository.save(userGroup);
@@ -118,17 +122,30 @@ public class GroupServiceImpl implements GroupService {
 
 	@Override
 	public void sendInviteLink(String toAddress, int groupId) throws Exception {
+		User user = userService.getCurrentAuthUser();
 		Group group = groupRepository.findByGroupId(groupId);
 		if (group == null) {
 			throw new Exception("Group ID not found");
 		}
 		String inviteLink = env.getProperty("frontend.url") + "/home/groups/join/" + group.getGroupLink();
-		SimpleMailMessage email = new SimpleMailMessage();
-		email.setTo(toAddress);
-		email.setSubject("Group Invitation Link");
-		email.setText("You are invited to join group: " + "\r\n" + inviteLink);
-		mailSender.send(email);
-
+//		SimpleMailMessage email = new SimpleMailMessage();
+//		email.setTo(toAddress);
+//		email.setSubject("Group Invitation Link");
+//		email.setText("You are invited to join group: " + "\r\n" + inviteLink);
+//		mailSender.send(email);
+		MimeMessage message = mailSender.createMimeMessage();
+		message.setRecipient(MimeMessage.RecipientType.TO, new InternetAddress(toAddress, false));
+		message.setSubject("Group Invitation Link");
+		message.setContent("<div style=\"text-align: left; font-size: 16px\"><div>"
+				+ "<span style=\"font-weight: bold\">" + user.getEmail() + "</span>" + " has invited you to join the "
+				+ "<span style=\"font-weight: bold \">"+ group.getGroupName() + "</span>" + " group " + "</div>"
+				+ "<div style=\"margin-top: 14px\">"
+				+ "<div>This invitation will expire in 15 minutes:</div>"
+				+ "<div>"
+				+ inviteLink
+				+ "</div></div></div>",
+				"text/html; charset=utf-8");
+		mailSender.send(message);
 	}
 
 	@Override
@@ -146,16 +163,16 @@ public class GroupServiceImpl implements GroupService {
 	public void delete(int groupId) throws Exception {
 		// Check exists group
 		Group g = groupRepository.findByGroupId(groupId);
-		if (g == null ) {
+		if (g == null) {
 			throw new Exception("Group Id not found");
 		}
-		
+
 		// Check authorization to delete
 		User currentUser = userService.getCurrentAuthUser();
 		if (currentUser.getUserId() != g.getUser().getUserId()) {
 			throw new Exception("You don't have permission to delete group " + groupId);
 		}
-		
+
 		g.setDeleted(true);
 		groupRepository.save(g);
 	}
@@ -164,7 +181,5 @@ public class GroupServiceImpl implements GroupService {
 	public void save(Group g) {
 		groupRepository.save(g);
 	}
-	
-	
 
 }

@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +42,6 @@ import com.web.midterm.entity.Verifytoken;
 import com.web.midterm.service.UserService;
 import com.web.midterm.service.VerifytokenService;
 import com.web.midterm.utils.JWTHandler;
-
 
 @RestController
 @RequestMapping("/api/user")
@@ -201,6 +202,33 @@ public class UserController {
 		Map<String, String> jsonResponse = new HashMap<>();
 		jsonResponse.put("Message: ", "Confirmed OK");
 		return ResponseEntity.ok().body(jsonResponse);
+	}
+
+	@PostMapping("/renewPassword")
+	public ResponseEntity<?> renewPassword(@RequestBody Map<String, String> payload) throws Exception {
+		String token = payload.get("token");
+		String newPassword = payload.get("newPassword");
+		userService.renewPassword(token, newPassword);
+		Map<String, Object> response = new HashMap<>();
+		response.put("message: ", "Renew password success");
+		return ResponseEntity.ok().body(response);
+	}
+
+	@PostMapping("/forgotPassword")
+	public ResponseEntity<?> forgotPassword(@RequestBody(required = false) Map<String, String> payload)
+			throws Exception {
+		if (payload == null) {
+			throw new Exception("No body provided");
+		}
+		if (!payload.containsKey("email")) {
+			throw new Exception("No email provided");
+		}
+		String email = payload.get("email");
+
+		userService.sendEmailRenewPassword(email);
+		Map<String, Object> response = new HashMap<>();
+		response.put("message: ", "Send email renew password success");
+		return ResponseEntity.ok().body(response);
 	}
 
 	@GetMapping("/isauth")

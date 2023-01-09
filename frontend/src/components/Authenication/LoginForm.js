@@ -162,6 +162,12 @@ function LoginForm() {
                 </Link>
                 <Link
                     className="text-center mb-2 mt-4 block w-full underline"
+                    to="/forgotPassword"
+                >
+                    Forgot Password
+                </Link>
+                <Link
+                    className="text-center mb-2 mt-4 block w-full underline"
                     to="/"
                 >
                     Return home

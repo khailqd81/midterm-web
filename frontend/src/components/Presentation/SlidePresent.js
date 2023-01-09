@@ -445,88 +445,119 @@ function SlidePresent() {
                 )}
             </div>
             <div className="flex justify-between flex-wrap flex-row md:px-8 md:py-10 md:pb-20 md:mx-4 p-2 h-[90vh]">
-                <div className="basis-full md:basis-1/2 border w-full h-full bg-white shadow-xl rounded-lg">
-                    <div className="mt-4 ml-4 mb-4 text-xl font-bold">
-                        {slideDetail?.heading}
-                    </div>
-                    {slideDetail?.optionList.length > 0 && (
-                        <div className="h-[400px]">
-                            <ResponsiveContainer>
-                                <BarChart
-                                    data={slideDetail?.optionList}
-                                    margin={{
-                                        top: 20,
-                                        right: 30,
-                                        left: 20,
-                                        bottom: 20,
-                                    }}
-                                >
-                                    <XAxis dataKey="optionName" />
-                                    <Bar dataKey="vote" fill="#8884d8">
-                                        <LabelList
-                                            dataKey="vote"
-                                            position="top"
-                                        />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    )}
-                </div>
-                <form
-                    className="mt-4 md:mt-0 basis-full bg-white shadow-xl rounded-lg md:basis-2/5 h-full px-8 py-4"
-                    onSubmit={(e) => handleSubmitForm(e)}
-                >
-                    <div className="font-bold text-xl mb-4">Select option:</div>
-                    <div className="overflow-y-auto max-h-[75%] shadow-2xl px-4 py-2">
-                        {slideDetail?.optionList.length > 0 ? (
-                            slideDetail?.optionList.map((opt) => {
-                                return (
-                                    <div
-                                        className={
-                                            opt.optionName ===
-                                                answer.optionName &&
-                                            opt.optionId === answer.optionId
-                                                ? "flex border border-sky-400 border-2 rounded-lg my-2 pl-2 bg-white"
-                                                : "flex border hover:border-sky-400 border-2 shadow rounded-lg my-2 pl-2 bg-white"
-                                        }
-                                    >
-                                        <input
-                                            className="outline-none"
-                                            id={opt.optionId}
-                                            name="option"
-                                            type="radio"
-                                            value={opt.optionName}
-                                            onChange={(e) =>
-                                                onInputChange(e, opt.optionId)
-                                            }
-                                            checked={
-                                                opt.optionName ===
-                                                    answer.optionName &&
-                                                opt.optionId === answer.optionId
-                                            }
-                                        />
-                                        <label
-                                            className="grow py-2 self-center ml-2 cursor-pointer"
-                                            htmlFor={opt.optionId}
+                {slideDetail.typeName === "multiple" && (
+                    <>
+                        <div className="basis-full md:basis-1/2 border w-full h-full bg-white shadow-xl rounded-lg">
+                            <div className="mt-4 ml-4 mb-4 text-xl font-bold">
+                                {slideDetail?.heading}
+                            </div>
+                            {slideDetail?.optionList.length > 0 && (
+                                <div className="h-[400px]">
+                                    <ResponsiveContainer>
+                                        <BarChart
+                                            data={slideDetail?.optionList}
+                                            margin={{
+                                                top: 20,
+                                                right: 30,
+                                                left: 20,
+                                                bottom: 20,
+                                            }}
                                         >
-                                            {opt.optionName}
-                                        </label>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <div></div>
-                        )}
-                    </div>
+                                            <XAxis dataKey="optionName" />
+                                            <Bar dataKey="vote" fill="#8884d8">
+                                                <LabelList
+                                                    dataKey="vote"
+                                                    position="top"
+                                                />
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
+                        </div>
+                        <form
+                            className="mt-4 md:mt-0 basis-full bg-white shadow-xl rounded-lg md:basis-2/5 h-full px-8 py-4"
+                            onSubmit={(e) => handleSubmitForm(e)}
+                        >
+                            <div className="font-bold text-xl mb-4">
+                                Select option:
+                            </div>
+                            <div className="overflow-y-auto max-h-[75%] shadow-2xl px-4 py-2">
+                                {slideDetail?.optionList.length > 0 ? (
+                                    slideDetail?.optionList.map((opt) => {
+                                        return (
+                                            <div
+                                                className={
+                                                    opt.optionName ===
+                                                        answer.optionName &&
+                                                    opt.optionId ===
+                                                        answer.optionId
+                                                        ? "flex border border-sky-400 border-2 rounded-lg my-2 pl-2 bg-white"
+                                                        : "flex border hover:border-sky-400 border-2 shadow rounded-lg my-2 pl-2 bg-white"
+                                                }
+                                            >
+                                                <input
+                                                    className="outline-none"
+                                                    id={opt.optionId}
+                                                    name="option"
+                                                    type="radio"
+                                                    value={opt.optionName}
+                                                    onChange={(e) =>
+                                                        onInputChange(
+                                                            e,
+                                                            opt.optionId
+                                                        )
+                                                    }
+                                                    checked={
+                                                        opt.optionName ===
+                                                            answer.optionName &&
+                                                        opt.optionId ===
+                                                            answer.optionId
+                                                    }
+                                                />
+                                                <label
+                                                    className="grow py-2 self-center ml-2 cursor-pointer"
+                                                    htmlFor={opt.optionId}
+                                                >
+                                                    {opt.optionName}
+                                                </label>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div></div>
+                                )}
+                            </div>
 
-                    <button
-                        className="mt-4 rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
-                        type="submit"
-                    >
-                        Submit
-                    </button>
-                </form>
+                            <button
+                                className="mt-4 rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                                type="submit"
+                            >
+                                Submit
+                            </button>
+                        </form>
+                    </>
+                )}
+                {slideDetail.typeName === "heading" && (
+                    <div className="flex flex-col min-h-[50vh] justify-center border w-full h-full bg-white text-center">
+                        <div className="mt-8 mx-auto mb-2 text-4xl font-bold  max-w-[60%] break-words break-all">
+                            {slideDetail?.heading}
+                        </div>
+                        <div className="mt-2 mx-auto mb-4 text-xl max-w-[60%] break-words break-all">
+                            {slideDetail?.subHeading}
+                        </div>
+                    </div>
+                )}
+                {slideDetail.typeName === "paragraph" && (
+                    <div className="flex flex-col min-h-[50vh] justify-center border w-full h-full bg-white text-center">
+                        <div className="mt-8 mx-auto mb-2 text-4xl font-bold  max-w-[60%] break-words break-all">
+                            {slideDetail?.heading}
+                        </div>
+                        <div className="mt-2 mx-auto mb-4 text-xl max-w-[60%] break-words break-all">
+                            {slideDetail?.paragraph}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <MQABox

@@ -529,28 +529,74 @@ export default function GroupInfo() {
                                 )
                             }
                         >
-                            <div className="font-bold ml-4">
-                                {groupInfo.present?.currentSlide?.heading}
-                            </div>
-                            <BarChart
-                                cursor="pointer"
-                                width={740}
-                                height={250}
-                                data={
-                                    groupInfo.present?.currentSlide?.optionList
-                                }
-                                margin={{
-                                    top: 20,
-                                    right: 30,
-                                    left: 20,
-                                    bottom: 20,
-                                }}
-                            >
-                                <XAxis dataKey="optionName" />
-                                <Bar dataKey="vote" fill="#8884d8">
-                                    <LabelList dataKey="vote" position="top" />
-                                </Bar>
-                            </BarChart>
+                            {groupInfo.present?.currentSlide?.typeName ===
+                                "multiple" && (
+                                <>
+                                    <div className="font-bold ml-4">
+                                        {
+                                            groupInfo.present?.currentSlide
+                                                ?.heading
+                                        }
+                                    </div>
+                                    <BarChart
+                                        cursor="pointer"
+                                        width={740}
+                                        height={250}
+                                        data={
+                                            groupInfo.present?.currentSlide
+                                                ?.optionList
+                                        }
+                                        margin={{
+                                            top: 20,
+                                            right: 30,
+                                            left: 20,
+                                            bottom: 20,
+                                        }}
+                                    >
+                                        <XAxis dataKey="optionName" />
+                                        <Bar dataKey="vote" fill="#8884d8">
+                                            <LabelList
+                                                dataKey="vote"
+                                                position="top"
+                                            />
+                                        </Bar>
+                                    </BarChart>
+                                </>
+                            )}
+                            {groupInfo.present?.currentSlide?.typeName ===
+                                "heading" && (
+                                <>
+                                    <div className="font-bold px-10 pt-4 pb-2 text-center">
+                                        {
+                                            groupInfo.present?.currentSlide
+                                                ?.heading
+                                        }
+                                    </div>
+                                    <div className="font-bold px-10 pb-8 text-center">
+                                        {
+                                            groupInfo.present?.currentSlide
+                                                ?.subHeading
+                                        }
+                                    </div>
+                                </>
+                            )}
+                            {groupInfo.present?.currentSlide?.typeName ===
+                                "paragraph" && (
+                                <>
+                                    <div className="font-bold px-10 pt-4 pb-2 text-center">
+                                        {
+                                            groupInfo.present?.currentSlide
+                                                ?.heading
+                                        }
+                                    </div>
+                                    <div className="font-bold px-10 pb-8 text-center">
+                                        {
+                                            groupInfo.present?.currentSlide
+                                                ?.paragraph
+                                        }
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <MQABox
                             isLogin={true}

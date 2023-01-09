@@ -6,4 +6,5 @@ public interface VerifytokenService {
 	public void saveVerifytoken(Verifytoken token);
 	public void confirmedToken(String token) throws Exception;
 	public void sendMail(String toAddress, String token);
+	public Verifytoken findByToken(String token);
 }

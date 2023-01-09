@@ -17,6 +17,8 @@ import PresentationEdit from "./components/Presentation/PresentationEdit";
 import SlidePresent from "./components/Presentation/SlidePresent";
 import LandingPage from "./components/LandingPage";
 import PresentationCoList from "./components/Presentation/PresentationCoList";
+import ForgotPasswordForm from "./components/Authenication/ForgotPasswordForm";
+import RenewPasswordForm from "./components/Authenication/RenewPassowordForm";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,14 @@ function App() {
                             <Route
                                 path="/register"
                                 element={<RegisterForm />}
+                            />
+                            <Route
+                                path="/forgotPassword"
+                                element={<ForgotPasswordForm />}
+                            />
+                            <Route
+                                path="/renewPassword/:token"
+                                element={<RenewPasswordForm />}
                             />
                             <Route
                                 path="/user/confirm"
