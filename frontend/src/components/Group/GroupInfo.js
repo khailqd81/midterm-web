@@ -58,18 +58,31 @@ export default function GroupInfo() {
         }
         let newSlideDetail = socketResponse?.currentSlide;
         newSlideDetail?.optionList.sort((a, b) => a.optionId - b.optionId);
-        let userAnswer = socketResponse?.userAnswer;
-        if (userAnswer !== null && Object.keys(socketResponse).length > 0) {
-            setAnswerList((prev) => {
-                console.log("preList", prev);
-                let newAnswerList = [];
-                if (prev.length > 0) {
-                    newAnswerList = [...prev];
-                }
+        // let userAnswer = socketResponse?.userAnswer;
+        // if (userAnswer !== null && Object.keys(socketResponse).length > 0) {
+        //     setAnswerList((prev) => {
+        //         console.log("preList", prev);
+        //         let newAnswerList = [];
+        //         if (prev.length > 0) {
+        //             newAnswerList = [...prev];
+        //         }
 
-                newAnswerList.unshift(userAnswer);
-                return newAnswerList;
-            });
+        //         newAnswerList.unshift(userAnswer);
+        //         return newAnswerList;
+        //     });
+        // }
+        if (socketResponse.userAnswer) {
+            setAnswerList((prev) => [...prev, socketResponse.userAnswer]);
+        }
+
+        if (socketResponse.answerList) {
+            setAnswerList(socketResponse.answerList);
+        }
+        if (socketResponse.chatList) {
+            setChatList(socketResponse.chatList);
+        }
+        if (socketResponse.chat) {
+            setChatList((prev) => [...prev, socketResponse.chat]);
         }
         setGroupInfo((prev) => {
             return {

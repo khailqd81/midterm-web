@@ -11,11 +11,11 @@ module.exports.handleNotifyNewChat = (req, res, next) => {
 
   if (req.body.group) {
     var group = req.body.group;
-    console.log(req.body);
     var groupRoom = "group" + group.groupId;
     console.log("controller present group", groupRoom);
     socketIoObject.socketIo.to(groupRoom).emit("read_message", {
       ...req.body.presentation,
+      chat: req.body.chat,
     });
   }
   res.json({ vote: "ok" });

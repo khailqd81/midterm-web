@@ -269,7 +269,8 @@ function SlidePresent() {
             let newSlideDetail = socketResponse.currentSlide;
             newSlideDetail?.optionList.sort((a, b) => a.optionId - b.optionId);
             setSlideDetail(newSlideDetail);
-        } else if (socketResponse.chat) {
+        }
+        if (socketResponse.chat) {
             toast.info("New message added", {
                 autoClose: 3000,
                 style: {

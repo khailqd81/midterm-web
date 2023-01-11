@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.web.midterm.entity.Chat;
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.GroupRole;
 import com.web.midterm.entity.Option;
@@ -30,6 +32,7 @@ import com.web.midterm.entity.Slide;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserAnswer;
 import com.web.midterm.entity.UserGroup;
+import com.web.midterm.service.ChatService;
 import com.web.midterm.service.GroupService;
 import com.web.midterm.service.PresentationService;
 import com.web.midterm.service.SlideService;
@@ -41,6 +44,8 @@ import com.web.midterm.service.UserService;
 public class PresentationController {
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private ChatService chatService;
 	@Autowired
 	private GroupService groupService;
 	@Autowired
@@ -287,6 +292,12 @@ public class PresentationController {
 			}
 		}
 		
+		// Get chat list
+		Page<Chat> chatPage = chatService.findByPresentationId(presentId, 0);
+		List<Chat> chatList = chatPage.getContent();
+		int totalPage = chatPage.getTotalPages();
+		
+		
 		// Call socket server
 		// request url
 		String url = socketUrl + "/presents";
@@ -297,8 +308,10 @@ public class PresentationController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", p);
-		map.put("answerList", userAnswerList);
 		map.put("group", p.getGroup());
+		map.put("answerList", userAnswerList);
+		map.put("chatList", chatList);
+		map.put("totalPage", totalPage);
 		map.put("room", p.getPresentId());
 		// map.put("room", p.getPresentId());
 
@@ -357,6 +370,24 @@ public class PresentationController {
 		p.setPublic(false);
 		presentationService.save(p);
 
+
+		// Get answerList with currentSlide
+		List<Option> optionList = p.getCurrentSlide().getOptionList();
+		List<UserAnswer> userAnswerList = new ArrayList<>();
+		if (optionList != null && optionList.size() > 0) {
+			for (Option opt : optionList) {
+				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+				userAnswerList.addAll(optAnswer);
+			}
+		}
+		
+		// Get chat list
+		Page<Chat> chatPage = chatService.findByPresentationId(presentId, 0);
+		List<Chat> chatList = chatPage.getContent();
+		int totalPage = chatPage.getTotalPages();
+		
+		
+		
 		// Call socket server
 		// request url
 		String url = socketUrl + "/groups";
@@ -370,6 +401,9 @@ public class PresentationController {
 		map.put("group", p.getGroup());
 		map.put("oldGroup", oldGroup);
 		map.put("room", "public");
+		map.put("answerList", userAnswerList);
+		map.put("chatList", chatList);
+		map.put("totalPage", totalPage);
 		// map.put("room", p.getPresentId());
 
 		// send POST request
