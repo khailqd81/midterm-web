@@ -138,6 +138,7 @@ export default function GroupInfo() {
             );
             let present = response.data.present;
             if (response.data.role) {
+                console.log("role: ", response.data.role);
                 setRole(response.data.role);
             } else {
                 setRole("member");
@@ -345,6 +346,29 @@ export default function GroupInfo() {
         }
     };
 
+    async function updateCurrentSlide(slideId) {
+        console.log("slideId in groupInfo: ", slideId);
+        if (slideId === null || slideId === undefined) {
+            return;
+        }
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            await axios.post(
+                `${process.env.REACT_APP_API_ENDPOINT}/api/presents/${groupInfo?.present?.presentId}/${slideId}`,
+                {},
+                {
+                    headers: { Authorization: "Bearer " + accessToken },
+                }
+            );
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const onChangeSlide = async (slideIndex, slideId) => {
+        await updateCurrentSlide(slideId);
+    };
+
     // userId of the current user
     const currentUserId = localStorage.getItem("userId");
 
@@ -520,7 +544,38 @@ export default function GroupInfo() {
                     {/* <div className="mt-4 text-center border px-8 py-6 shadow-lg hover:shadow-xl hover:border-sky-400 cursor-pointer rounded-lg max-w-[10vw] uppercase">
                         {groupInfo.present?.currentSlide?.typeName}
                     </div> */}
-                    <div className="flex flex-wrap justify-center my-4">
+                    <div className="flex flex-wrap flex-col justify-center my-4">
+                        {(role === "owner" || role === "co-owner") && (
+                            <div className="mb-8 flex flex-row flex-wrap">
+                                {groupInfo?.present?.slideList.length > 0 &&
+                                    groupInfo?.present?.slideList.map(
+                                        (slide, index) => {
+                                            return (
+                                                <li
+                                                    className="flex mr-2"
+                                                    key={slide?.slideId}
+                                                    onClick={(e) =>
+                                                        onChangeSlide(
+                                                            index,
+                                                            slide?.slideId
+                                                        )
+                                                    }
+                                                >
+                                                    <div className="flex">
+                                                        <p>{index + 1}</p>
+                                                        <div className="flex flex-col justify-center bg-white border hover:border-black cursor-pointer h-24 w-40 rounded-lg shadow ml-2">
+                                                            <p className="text-xs text-center">
+                                                                {slide?.heading}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            );
+                                        }
+                                    )}
+                            </div>
+                        )}
+
                         <div
                             className="flex flex-col pt-4 shadow-xl rounded-lg hover:shadow-2xl cursor-pointer mb-4"
                             onClick={() =>

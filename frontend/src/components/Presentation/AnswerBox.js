@@ -1,6 +1,5 @@
 function AnswerBox({ setShowBox, answerList }) {
     const sortByDate = (arraySort, isDesc) => {
-        console.log("arraySort", arraySort);
         let sortedData = null;
         if (isDesc) {
             sortedData = arraySort.sort((a, b) => b.createdAt - a.createdAt);
@@ -8,10 +7,10 @@ function AnswerBox({ setShowBox, answerList }) {
             sortedData = arraySort.sort((a, b) => a.createdAt - b.createdAt);
         }
         let currentDay = new Date(sortedData[0].createdAt);
-        console.log("createMessagesArray", currentDay);
 
         const stillCurrentDay = (dayOfItem) => {
             let dayCompare = new Date(dayOfItem);
+
             return (
                 dayCompare.getFullYear() === currentDay.getFullYear() &&
                 dayCompare.getMonth() === currentDay.getMonth() &&
@@ -24,7 +23,9 @@ function AnswerBox({ setShowBox, answerList }) {
 
         const createMessagesArray = (messages) => {
             const newDay = {};
-            newDay[currentDay.toISOString().split("T")[0]] = messages;
+
+            newDay[currentDay.toLocaleString("vi-VN").slice(10)] = messages;
+            //newDay[currentDay.toISOString().split("T")[0]] = messages;
             fullMessageArray.push(newDay);
         };
 
@@ -61,15 +62,14 @@ function AnswerBox({ setShowBox, answerList }) {
                             let list =
                                 answersByDate[Object.keys(answersByDate)[0]];
                             return (
-                                <>
+                                <div key={Object.keys(answersByDate)[0]}>
                                     <div className="text-center text-sm">
-                                        {index === answerList.length - 1
+                                        {Object.keys(answersByDate)[0] ===
+                                        new Date()
+                                            .toLocaleString("vi-VN", "ICT")
+                                            .slice(10)
                                             ? "Today"
-                                            : new Date(
-                                                  Object.keys(answersByDate)[0]
-                                              )
-                                                  .toLocaleString("vi-VN")
-                                                  .slice(10)}
+                                            : Object.keys(answersByDate)[0]}
                                     </div>
                                     {list.map((a) => {
                                         return (
@@ -94,7 +94,7 @@ function AnswerBox({ setShowBox, answerList }) {
                                             </li>
                                         );
                                     })}
-                                </>
+                                </div>
                             );
                         }
                     )}
@@ -102,5 +102,9 @@ function AnswerBox({ setShowBox, answerList }) {
         </div>
     );
 }
-
+{
+    /* new Date(
+                                                  Object.keys(answersByDate)[0]
+                                              ).toString() */
+}
 export default AnswerBox;

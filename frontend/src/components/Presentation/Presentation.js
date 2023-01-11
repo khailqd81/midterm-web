@@ -224,67 +224,72 @@ function Presentation() {
                 </div>
                 <ul>
                     {presenList.length > 0 ? (
-                        presenList.map((g) => {
-                            return (
-                                <li
-                                    className="first:mt-4 border-b flex justify-between cursor-pointer  first:border-t"
-                                    key={g.presentId}
-                                >
-                                    <div
-                                        className="flex justify-between px-4 py-4 cursor-pointer grow hover:bg-slate-200"
-                                        onClick={() =>
-                                            handleGetPresentDetail(g.presentId)
-                                        }
+                        presenList
+                            .sort((a, b) => a.presentId - b.presentId)
+                            .map((g) => {
+                                return (
+                                    <li
+                                        className="first:mt-4 border-b flex justify-between cursor-pointer  first:border-t"
+                                        key={g.presentId}
                                     >
-                                        <div>
-                                            <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">
-                                                {g.presentName[0]}
-                                            </span>
-                                            {g.presentName}
-                                        </div>
-                                        <div className="flex">
-                                            <BsFillCalendarCheckFill
-                                                className="self-center mr-2"
-                                                size={20}
-                                            />
-                                            <span className="italic self-center mr-2">
-                                                Created at:
-                                            </span>{" "}
-                                            {new Date(g.createdAt)
-                                                .toString()
-                                                .slice(0, 24)}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex">
-                                        <BsFillTrashFill
-                                            onClick={(e) =>
-                                                toast.promise(
-                                                    handleDeletePresent(
-                                                        e,
-                                                        g.presentId
-                                                    ),
-                                                    {
-                                                        pending:
-                                                            "Delete Presentation",
-                                                        success:
-                                                            "Delete Presentation success 👌",
-                                                        error: "Delete Presentation failed  🤯",
-                                                    },
-                                                    {
-                                                        style: {
-                                                            marginTop: "50px",
-                                                        },
-                                                    }
+                                        <div
+                                            className="flex justify-between px-4 py-4 cursor-pointer grow hover:bg-slate-200"
+                                            onClick={() =>
+                                                handleGetPresentDetail(
+                                                    g.presentId
                                                 )
                                             }
-                                            className="self-center ml-4 hover:opacity-50"
-                                            size={20}
-                                        />
-                                    </div>
-                                </li>
-                            );
-                        })
+                                        >
+                                            <div>
+                                                <span className="uppercase shadow-xl py-2 px-3 rounded-full mr-4 font-bold bg-[#61dafb]">
+                                                    {g.presentName[0]}
+                                                </span>
+                                                {g.presentName}
+                                            </div>
+                                            <div className="flex">
+                                                <BsFillCalendarCheckFill
+                                                    className="self-center mr-2"
+                                                    size={20}
+                                                />
+                                                <span className="italic self-center mr-2">
+                                                    Created at:
+                                                </span>{" "}
+                                                {new Date(g.createdAt)
+                                                    .toString()
+                                                    .slice(0, 24)}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex">
+                                            <BsFillTrashFill
+                                                onClick={(e) =>
+                                                    toast.promise(
+                                                        handleDeletePresent(
+                                                            e,
+                                                            g.presentId
+                                                        ),
+                                                        {
+                                                            pending:
+                                                                "Delete Presentation",
+                                                            success:
+                                                                "Delete Presentation success 👌",
+                                                            error: "Delete Presentation failed  🤯",
+                                                        },
+                                                        {
+                                                            style: {
+                                                                marginTop:
+                                                                    "50px",
+                                                            },
+                                                        }
+                                                    )
+                                                }
+                                                className="self-center ml-4 hover:opacity-50"
+                                                size={20}
+                                            />
+                                        </div>
+                                    </li>
+                                );
+                            })
                     ) : (
                         <div className="ml-4 text-cyan-500">
                             You have not created any presentation yet

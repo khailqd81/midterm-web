@@ -82,8 +82,8 @@ public class PresentationController {
 		String currentPrincipalName = authentication.getName();
 		User user = userService.findByEmail(currentPrincipalName);
 
-		List<Presentation> coList = user.getCoPresentationList();
-//		List<Presentation> coList = coListDb.stream().filter(p -> !p.isDeleted()).collect(Collectors.toList());
+		List<Presentation> coListDb = user.getCoPresentationList();
+		List<Presentation> coList = coListDb.stream().filter(p -> !p.isDeleted()).collect(Collectors.toList());
 
 		List<Presentation> ownerListDb = user.getPresentationList();
 		List<Presentation> ownerList = ownerListDb.stream().filter(p -> !p.isDeleted()).collect(Collectors.toList());

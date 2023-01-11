@@ -53,9 +53,6 @@ function ChatBox({
                                 (chatByDate, index) => {
                                     let list =
                                         chatByDate[Object.keys(chatByDate)[0]];
-                                    console.log(
-                                        chatByDate[Object.keys(chatByDate)[0]]
-                                    );
                                     return (
                                         <>
                                             {list.map((a) => {
@@ -87,17 +84,17 @@ function ChatBox({
                                                 );
                                             })}
                                             <div className="text-center text-sm">
-                                                {index === chatList.length - 1
+                                                {Object.keys(chatByDate)[0] ===
+                                                new Date()
+                                                    .toLocaleString(
+                                                        "vi-VN",
+                                                        "ICT"
+                                                    )
+                                                    .slice(10)
                                                     ? "Today"
-                                                    : new Date(
-                                                          Object.keys(
-                                                              chatByDate
-                                                          )[0]
-                                                      )
-                                                          .toLocaleString(
-                                                              "vi-VN"
-                                                          )
-                                                          .slice(10)}
+                                                    : Object.keys(
+                                                          chatByDate
+                                                      )[0]}
                                             </div>
                                         </>
                                     );

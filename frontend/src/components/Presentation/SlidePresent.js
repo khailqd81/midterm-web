@@ -14,7 +14,7 @@ function SlidePresent() {
     const { socketResponse } = useSocket(`present${params.presentId}`, "khai");
     const [role, setRole] = useState("member");
     const [isLogin, setIsLogin] = useState(false);
-
+    const [isUserAnswer, setIsUserAnswer] = useState(false);
     // C
     const [chatList, setChatList] = useState([]);
     const [answerList, setAnswerList] = useState([]);
@@ -342,6 +342,7 @@ function SlidePresent() {
                 }
             );
         }
+        setIsUserAnswer(true);
     };
 
     if (isLoading) {
@@ -478,67 +479,75 @@ function SlidePresent() {
                                 </div>
                             )}
                         </div>
-                        <form
-                            className="mt-4 md:mt-0 basis-full bg-white shadow-xl rounded-lg md:basis-2/5 h-full px-8 py-4"
-                            onSubmit={(e) => handleSubmitForm(e)}
-                        >
-                            <div className="font-bold text-xl mb-4">
-                                Select option:
+                        {isUserAnswer ? (
+                            <div className="mt-4 md:mt-0 basis-full bg-white shadow-xl rounded-lg md:basis-2/5 h-full px-8 py-4">
+                                <div className="text-center font-bold text-xl mb-4">
+                                    You have submitted vote
+                                </div>
                             </div>
-                            <div className="overflow-y-auto max-h-[75%] shadow-2xl px-4 py-2">
-                                {slideDetail?.optionList.length > 0 ? (
-                                    slideDetail?.optionList.map((opt) => {
-                                        return (
-                                            <div
-                                                className={
-                                                    opt.optionName ===
-                                                        answer.optionName &&
-                                                    opt.optionId ===
-                                                        answer.optionId
-                                                        ? "flex border border-sky-400 border-2 rounded-lg my-2 pl-2 bg-white"
-                                                        : "flex border hover:border-sky-400 border-2 shadow rounded-lg my-2 pl-2 bg-white"
-                                                }
-                                            >
-                                                <input
-                                                    className="outline-none"
-                                                    id={opt.optionId}
-                                                    name="option"
-                                                    type="radio"
-                                                    value={opt.optionName}
-                                                    onChange={(e) =>
-                                                        onInputChange(
-                                                            e,
-                                                            opt.optionId
-                                                        )
-                                                    }
-                                                    checked={
+                        ) : (
+                            <form
+                                className="mt-4 md:mt-0 basis-full bg-white shadow-xl rounded-lg md:basis-2/5 h-full px-8 py-4"
+                                onSubmit={(e) => handleSubmitForm(e)}
+                            >
+                                <div className="font-bold text-xl mb-4">
+                                    Select option:
+                                </div>
+                                <div className="overflow-y-auto max-h-[75%] shadow-2xl px-4 py-2">
+                                    {slideDetail?.optionList.length > 0 ? (
+                                        slideDetail?.optionList.map((opt) => {
+                                            return (
+                                                <div
+                                                    className={
                                                         opt.optionName ===
                                                             answer.optionName &&
                                                         opt.optionId ===
                                                             answer.optionId
+                                                            ? "flex border border-sky-400 border-2 rounded-lg my-2 pl-2 bg-white"
+                                                            : "flex border hover:border-sky-400 border-2 shadow rounded-lg my-2 pl-2 bg-white"
                                                     }
-                                                />
-                                                <label
-                                                    className="grow py-2 self-center ml-2 cursor-pointer"
-                                                    htmlFor={opt.optionId}
                                                 >
-                                                    {opt.optionName}
-                                                </label>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                    <div></div>
-                                )}
-                            </div>
+                                                    <input
+                                                        className="outline-none"
+                                                        id={opt.optionId}
+                                                        name="option"
+                                                        type="radio"
+                                                        value={opt.optionName}
+                                                        onChange={(e) =>
+                                                            onInputChange(
+                                                                e,
+                                                                opt.optionId
+                                                            )
+                                                        }
+                                                        checked={
+                                                            opt.optionName ===
+                                                                answer.optionName &&
+                                                            opt.optionId ===
+                                                                answer.optionId
+                                                        }
+                                                    />
+                                                    <label
+                                                        className="grow py-2 self-center ml-2 cursor-pointer"
+                                                        htmlFor={opt.optionId}
+                                                    >
+                                                        {opt.optionName}
+                                                    </label>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div></div>
+                                    )}
+                                </div>
 
-                            <button
-                                className="mt-4 rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
-                                type="submit"
-                            >
-                                Submit
-                            </button>
-                        </form>
+                                <button
+                                    className="mt-4 rounded px-4 py-2 bg-[#61dafb] shadow-2xl hover:shadow-xl hover:bg-[#61fbe2] disabled:hover:bg-[#61dafb] disabled:hover:shadow-none disabled:opacity-50"
+                                    type="submit"
+                                >
+                                    Submit
+                                </button>
+                            </form>
+                        )}
                     </>
                 )}
                 {slideDetail.typeName === "heading" && (

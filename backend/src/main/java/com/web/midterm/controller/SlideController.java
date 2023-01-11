@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -158,6 +159,16 @@ public class SlideController {
 		// Handle send update slide to client through socket
 		Presentation presentation = theSlide.getPresentation();
 		presentation.setCurrentSlide(theSlide);
+		
+		List<Option> theOptionList = theSlide.getOptionList();
+		List<UserAnswer> userAnswerList = new ArrayList<>();
+		if (theOptionList != null && theOptionList.size() > 0) {
+			for (Option opt : theOptionList) {
+				List<UserAnswer> optAnswer = userAnswerService.findByOptionId(opt.getOptionId());
+				userAnswerList.addAll(optAnswer);
+			}
+		}
+		
 		// Call socket server
 		// request url
 		String url = socketUrl + "/slides";
@@ -168,6 +179,7 @@ public class SlideController {
 		// request body parameters
 		Map<String, Object> map = new HashMap<>();
 		map.put("presentation", presentation);
+		map.put("answerList", userAnswerList);
 		map.put("group", presentation.getGroup());
 		//map.put("room", presentation.getPresentId());
 		// map.put("room", p.getPresentId());
@@ -208,11 +220,31 @@ public class SlideController {
 
 	@DeleteMapping("/{slideId}")
 	public ResponseEntity<?> deleteSlide(@PathVariable int slideId) throws Exception {
-		Slide s = slideService.findById(slideId);
-		if (s == null) {
+		Slide slide = slideService.findById(slideId);
+		if (slide == null) {
 			throw new Exception("Slide Id not found");
 		}
+		Presentation presentation = slide.getPresentation();
+		List<Slide> slideList = presentation.getSlideList().stream().filter(s -> s.getSlideId() != slideId).collect(Collectors.toList());
 		slideService.deleteById(slideId);
+		
+		presentation.setSlideList(slideList);
+		// Call socket server
+		// request url
+		String url = socketUrl + "/slides";
+
+		// create an instance of RestTemplate
+		RestTemplate restTemplate = new RestTemplate();
+
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", presentation);
+		map.put("group", presentation.getGroup());
+		//map.put("room", presentation.getPresentId());
+		// map.put("room", p.getPresentId());
+
+		// send POST request
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		Map<String, String> message = new HashMap<>();
 		message.put("message", "Delete slide success");
 		return ResponseEntity.ok(message);

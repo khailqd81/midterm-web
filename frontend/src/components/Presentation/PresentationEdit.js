@@ -455,7 +455,7 @@ function PresentationEdit() {
             } catch (error) {
                 navigate("/login");
             }
-            await callApiDeleteSlide();
+            await callApiDeleteSlide(slideId);
         } finally {
             e.target.disabled = false;
         }
@@ -566,14 +566,14 @@ function PresentationEdit() {
 
     const multipleSlide = (
         <>
-            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[80vh]">
+            <div className="flex flex-col md:basis-7/12 basis-full bg-gray-200 px-8 py-10 pb-20 h-[80vh] overflow-x-auto">
                 <FullScreen handle={handle}>
-                    <div className="border flex flex-col justify-center h-full bg-white full-screenable-node min-h-[200px]">
+                    <div className="border flex flex-col flex-wrap justify-center h-full bg-white full-screenable-node min-h-[200px]  overflow-x-auto">
                         <div className="mt-8 ml-4 mb-4 text-xl font-bold">
                             {currentSlide?.heading}
                         </div>
                         {currentSlide?.optionList.length > 0 && (
-                            <div className="mx-auto h-[250px] max-w-[60vw]">
+                            <div className="mx-auto h-[250px]">
                                 <BarChart
                                     width={730}
                                     height={250}
@@ -647,7 +647,7 @@ function PresentationEdit() {
                     </div>
                 )}
             </div>
-            <div className="flex basis-1/5 flex-col px-4 py-2">
+            <div className="flex md:basis-1/5 basis-full flex-col px-4 py-2">
                 <div className="flex flex-col border-b pb-8">
                     <span className="font-bold"> Slide type</span>
                     <div className="py-2 mt-2 outline-none">Multiple</div>
@@ -699,7 +699,7 @@ function PresentationEdit() {
     );
     const headingSlide = (
         <>
-            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh]">
+            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 h-[70vh]">
                 <FullScreen handle={handle}>
                     <div className="flex flex-col min-h-[50vh] justify-center border w-full h-full bg-white text-center">
                         <div className="mt-8 mx-auto mb-2 text-4xl font-bold  max-w-[60%] break-words break-all">
@@ -762,7 +762,7 @@ function PresentationEdit() {
     );
     const paragraphSlide = (
         <>
-            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 mx-4 h-[70vh]">
+            <div className="flex flex-col basis-7/12 bg-gray-200 px-8 py-10 pb-20 h-[70vh]">
                 <FullScreen handle={handle}>
                     <div className="flex flex-col min-h-[50vh] justify-center border w-full h-full bg-white text-center">
                         <div className="mt-8 mx-auto mb-2 text-4xl font-bold  max-w-[60%] break-words break-all">
@@ -1122,7 +1122,7 @@ function PresentationEdit() {
                 </div>
             </div>
 
-            <div className="flex grow flex-wrap lg:flex-nowrap">
+            <div className="flex flex-wrap ">
                 <div className="basis-1/5">
                     <ul>
                         {presentDetail?.slideList.length > 0 &&
@@ -1130,26 +1130,38 @@ function PresentationEdit() {
                                 if (slide === undefined) {
                                     return <li></li>;
                                 }
-                                console.log("slide", { slide });
                                 return (
                                     <li
                                         className="flex mt-2 flex-col"
                                         key={slide?.slideId}
-                                        onClick={(e) =>
-                                            onChangeSlide(index, slide?.slideId)
-                                        }
                                     >
                                         <div className="flex">
                                             <p>{index + 1}</p>
                                             {slide?.slideId ===
                                             currentSlide.slideId ? (
-                                                <div className="flex flex-col justify-center bg-white border border-black cursor-pointer h-24 w-40 rounded-lg shadow ml-2">
+                                                <div
+                                                    className="flex flex-col justify-center bg-white border border-black cursor-pointer h-24 w-40 rounded-lg shadow ml-2"
+                                                    onClick={(e) =>
+                                                        onChangeSlide(
+                                                            index,
+                                                            slide?.slideId
+                                                        )
+                                                    }
+                                                >
                                                     <p className="text-xs text-center">
                                                         {slide?.heading}
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col justify-center bg-white border hover:border-black cursor-pointer h-24 w-40 rounded-lg shadow ml-2">
+                                                <div
+                                                    className="flex flex-col justify-center bg-white border hover:border-black cursor-pointer h-24 w-40 rounded-lg shadow ml-2"
+                                                    onClick={(e) =>
+                                                        onChangeSlide(
+                                                            index,
+                                                            slide?.slideId
+                                                        )
+                                                    }
+                                                >
                                                     <p className="text-xs text-center">
                                                         {slide?.heading}
                                                     </p>

@@ -51,12 +51,18 @@ function MQABox({
         let dayMessageArray = [];
         const fullMessageArray = [];
 
+        // const createMessagesArray = (messages) => {
+        //     const newDay = {};
+        //     newDay[currentDay.toISOString().split("T")[0]] = messages;
+        //     fullMessageArray.push(newDay);
+        // };
         const createMessagesArray = (messages) => {
             const newDay = {};
-            newDay[currentDay.toISOString().split("T")[0]] = messages;
+
+            newDay[currentDay.toLocaleString("vi-VN").slice(10)] = messages;
+            //newDay[currentDay.toISOString().split("T")[0]] = messages;
             fullMessageArray.push(newDay);
         };
-
         sortedData.forEach((message) => {
             if (!stillCurrentDay(message.createdAt)) {
                 createMessagesArray(dayMessageArray);

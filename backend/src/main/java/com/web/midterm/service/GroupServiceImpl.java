@@ -10,18 +10,18 @@ import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMailMessage;
 import org.springframework.stereotype.Service;
 
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.GroupDto;
 import com.web.midterm.entity.GroupRole;
+import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
 import com.web.midterm.repo.GroupRepository;
 import com.web.midterm.repo.GroupRoleRepository;
+import com.web.midterm.repo.PresentationRepository;
 import com.web.midterm.repo.UserGroupRepository;
 import com.web.midterm.repo.UserRepository;
 
@@ -29,6 +29,8 @@ import com.web.midterm.repo.UserRepository;
 public class GroupServiceImpl implements GroupService {
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private PresentationRepository presentationRepository;
 	@Autowired
 	private GroupRepository groupRepository;
 	@Autowired
@@ -172,7 +174,12 @@ public class GroupServiceImpl implements GroupService {
 		if (currentUser.getUserId() != g.getUser().getUserId()) {
 			throw new Exception("You don't have permission to delete group " + groupId);
 		}
-
+		Presentation p = g.getPresent();
+		if (p != null) {
+			p.setGroup(null);
+			presentationRepository.save(p);
+		}
+		g.setPresent(null);
 		g.setDeleted(true);
 		groupRepository.save(g);
 	}
