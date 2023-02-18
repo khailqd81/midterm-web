@@ -272,4 +272,5 @@ public class UserController {
 		jsonResponse.put("access_token", accessToken);
 		return ResponseEntity.ok().body(jsonResponse);
 	}
+
 }

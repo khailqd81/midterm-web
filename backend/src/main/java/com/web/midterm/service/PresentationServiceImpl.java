@@ -18,6 +18,7 @@ public class PresentationServiceImpl implements PresentationService {
 	private GroupService groupService;
 	@Autowired
 	private PresentationRepository presentationRepository;
+	
 	@Override
 	public Presentation findById(int id) {
 		Presentation p =  presentationRepository.findById(id);

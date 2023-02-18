@@ -23,22 +23,22 @@ import com.web.midterm.repo.GroupRepository;
 import com.web.midterm.repo.GroupRoleRepository;
 import com.web.midterm.repo.PresentationRepository;
 import com.web.midterm.repo.UserGroupRepository;
-import com.web.midterm.repo.UserRepository;
 
 @Service
 public class GroupServiceImpl implements GroupService {
 	@Autowired
 	private UserService userService;
+	
+	// Include presentationRepository to prevent circular dependency with groupService
 	@Autowired
 	private PresentationRepository presentationRepository;
 	@Autowired
+	private UserGroupRepository userGroupRepository;
+	@Autowired
 	private GroupRepository groupRepository;
 	@Autowired
-	private UserRepository userRepository;
-	@Autowired
 	private GroupRoleRepository groupRoleRepository;
-	@Autowired
-	private UserGroupRepository userGroupRepository;
+	
 	@Autowired
 	private JavaMailSender mailSender;
 
@@ -59,7 +59,7 @@ public class GroupServiceImpl implements GroupService {
 
 	@Override
 	public boolean saveMember(int userId, int groupId, String roleName) {
-		User user = userRepository.findByUserId(userId);
+		User user = userService.findByUserId(userId);
 		Group group = groupRepository.findByGroupId(groupId);
 		GroupRole role = groupRoleRepository.findByRoleName(roleName);
 		if (user == null || group == null || role == null) {
@@ -93,7 +93,7 @@ public class GroupServiceImpl implements GroupService {
 
 	@Override
 	public void createGroup(GroupDto g) {
-		User owner = userRepository.findByUserId(g.getOwnerId());
+		User owner = userService.findByUserId(g.getOwnerId());
 
 		String link = UUID.randomUUID().toString();
 		Group newGroup = new Group();
@@ -130,11 +130,6 @@ public class GroupServiceImpl implements GroupService {
 			throw new Exception("Group ID not found");
 		}
 		String inviteLink = env.getProperty("frontend.url") + "/home/groups/join/" + group.getGroupLink();
-//		SimpleMailMessage email = new SimpleMailMessage();
-//		email.setTo(toAddress);
-//		email.setSubject("Group Invitation Link");
-//		email.setText("You are invited to join group: " + "\r\n" + inviteLink);
-//		mailSender.send(email);
 		MimeMessage message = mailSender.createMimeMessage();
 		message.setRecipient(MimeMessage.RecipientType.TO, new InternetAddress(toAddress, false));
 		message.setSubject("Group Invitation Link");

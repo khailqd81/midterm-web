@@ -47,26 +47,30 @@ public class SecurityConfig {
 			CorsConfiguration cors = new CorsConfiguration().applyPermitDefaultValues();
 			cors.addAllowedMethod(HttpMethod.DELETE);
 			cors.addAllowedMethod(HttpMethod.PUT);
-			//cors.addAllowedOrigin("*");
+			// cors.addAllowedOrigin("*");
 //			cors.addAllowedOrigin(frontendUrl);
 //			cors.addAllowedOrigin("http://localhost:3000");
 			cors.setAllowCredentials(true);
-			cors.setAllowedOrigins(Arrays.asList(frontendUrl,"http://localhost:3000"));
-			//cors.setAllowedOrigins(List.of(frontendUrl, "http://localhost:3000"));
+			cors.setAllowedOrigins(Arrays.asList(frontendUrl, "http://localhost:3000"));
 			return cors;
 		});
 
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 		http.csrf().disable();
 
-		http.authorizeHttpRequests().antMatchers("/api/login").permitAll().antMatchers("/api/user/register").permitAll()
+		http.authorizeHttpRequests()
+				.antMatchers("/api/login").permitAll()
+				.antMatchers("/api/user/register").permitAll()
+				.antMatchers("/v2/api-docs", "/swagger-resources/configuration/ui", "/swagger-resources",
+						"/swagger-resources/configuration/security", "/swagger-ui.html", "/webjars/**").permitAll()
 				.antMatchers("/api/presents/vote/**").permitAll()
 				.antMatchers("/api/slides/vote/**").permitAll()
 				.antMatchers("/api/user/confirm").permitAll()
 				.antMatchers("/api/user/renewPassword").permitAll()
 				.antMatchers("/api/user/forgotPassword").permitAll()
 				.antMatchers("/api/user/oauth2").permitAll()
-				.antMatchers("/api/user/refreshToken").permitAll().antMatchers("/api/groups/**").authenticated()
+				.antMatchers("/api/user/refreshToken").permitAll()
+				.antMatchers("/api/groups/**").authenticated()
 				.antMatchers("/api/user/**").authenticated();
 		// http.authorizeHttpRequests().anyRequest().authenticated();
 
@@ -74,7 +78,7 @@ public class SecurityConfig {
 		http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
-	
+
 	@Bean
 	AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
 			throws Exception {

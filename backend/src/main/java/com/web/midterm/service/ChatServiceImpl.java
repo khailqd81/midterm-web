@@ -15,7 +15,6 @@ import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
 import com.web.midterm.repo.ChatRepository;
-import com.web.midterm.repo.PresentationRepository;
 
 @Service
 public class ChatServiceImpl implements ChatService {
@@ -24,9 +23,9 @@ public class ChatServiceImpl implements ChatService {
 	@Autowired
 	private GroupService groupService;
 	@Autowired
-	private ChatRepository chatRepository;
+	private PresentationService presentationService;
 	@Autowired
-	private PresentationRepository presentationRepository;
+	private ChatRepository chatRepository;
 
 	@Override
 	public void save(Chat c) {
@@ -39,7 +38,7 @@ public class ChatServiceImpl implements ChatService {
 		Chat newMessage = new Chat();
 		newMessage.setCreatedAt(new Date());
 		newMessage.setUser(user);
-		Presentation p = presentationRepository.findById(presentId);
+		Presentation p = presentationService.findById(presentId);
 		if (p == null || p.isDeleted()) {
 			throw new Exception("Presentation Id not found");
 		}
@@ -66,7 +65,7 @@ public class ChatServiceImpl implements ChatService {
 		Chat newMessage = new Chat();
 		newMessage.setCreatedAt(new Date());
 		newMessage.setUser(user);
-		Presentation p = presentationRepository.findById(presentId);
+		Presentation p = presentationService.findById(presentId);
 		if (p == null || p.isDeleted()) {
 			throw new Exception("Presentation Id not found");
 		}
@@ -86,7 +85,7 @@ public class ChatServiceImpl implements ChatService {
 	
 	@Override
 	public Page<Chat> findByPresentationId(int preId, int page) throws Exception {
-		Presentation p = presentationRepository.findById(preId);
+		Presentation p = presentationService.findById(preId);
 		if (p == null || p.isDeleted()) {
 			throw new Exception("Presentation Id not found");
 		}
@@ -108,7 +107,7 @@ public class ChatServiceImpl implements ChatService {
 
 	@Override
 	public Page<Chat> findByPresentationIdPublic(int preId, int page) throws Exception {
-		Presentation p = presentationRepository.findById(preId);
+		Presentation p = presentationService.findById(preId);
 		if (p == null || p.isDeleted()) {
 			throw new Exception("Presentation Id not found");
 		}

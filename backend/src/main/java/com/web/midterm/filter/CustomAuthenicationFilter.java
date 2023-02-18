@@ -44,16 +44,6 @@ public class CustomAuthenicationFilter extends UsernamePasswordAuthenticationFil
 			throws AuthenticationException {
 		String username = request.getParameter("email");
 		String password = request.getParameter("password");
-//		try {
-//			Map<String, String> requestMap = new ObjectMapper().readValue(request.getInputStream(), Map.class);
-//			
-//		} catch (StreamReadException e) {
-//			e.printStackTrace();
-//		} catch (DatabindException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
 		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
 				password);
 		return authenticationManager.authenticate(authenticationToken);

@@ -39,8 +39,13 @@ import com.web.midterm.service.SlideService;
 import com.web.midterm.service.UserAnswerService;
 import com.web.midterm.service.UserService;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Authorization;
+
 @RestController
 @RequestMapping("/api/presents")
+@Api( tags = "Presentations")
 public class PresentationController {
 	@Autowired
 	private UserService userService;
@@ -81,6 +86,7 @@ public class PresentationController {
 
 	// Get list presentation of one user
 	@GetMapping
+	@ApiOperation(value = "")
 	public ResponseEntity<?> getPresentations() {
 		// Get user from access token
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

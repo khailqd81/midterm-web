@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -29,13 +30,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.midterm.MidtermApplication;
 
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
-	
+	private List<String> excludeUrlPatterns = new ArrayList<String>(
+			Arrays.asList("swagger-ui", "swagger-resources", "v2/api-docs","webjars","configuration/security","configuration"));
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		System.out.println(request.getServletPath());
-		if (request.getServletPath().equals("/api/login") 
-				|| request.getServletPath().equals("/api/user/register")
+		if (request.getServletPath().equals("/api/login") || request.getServletPath().equals("/api/user/register")
 				|| request.getServletPath().equals("/api/user/oauth2")
 				|| request.getServletPath().equals("/api/user/confirm")
 				|| request.getServletPath().equals("/api/user/renewPassword")
@@ -54,12 +56,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 					Properties p = new Properties();
 					String jwtSecret = null;
 					try {
-						InputStream input =  MidtermApplication.class.getResourceAsStream("/application.properties");					    p.load(input);
-					    jwtSecret = p.getProperty("jwt.secret");
+						InputStream input = MidtermApplication.class.getResourceAsStream("/application.properties");
+						p.load(input);
+						jwtSecret = p.getProperty("jwt.secret");
 					} catch (IOException ex) {
-					    ex.printStackTrace();
+						ex.printStackTrace();
 					}
-					
+
 					Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes());
 					JWTVerifier verifier = JWT.require(algorithm).build();
 					DecodedJWT decodedJWT = verifier.verify(token);
@@ -69,7 +72,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 					Arrays.stream(roles).forEach(role -> {
 						authorities.add(new SimpleGrantedAuthority(role));
 					});
-					UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
+					UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+							username, null, authorities);
 					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 					filterChain.doFilter(request, response);
 				} catch (Exception e) {
@@ -81,11 +85,20 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 					new ObjectMapper().writeValue(response.getOutputStream(), error);
 				}
 			} else {
-				//filterChain.doFilter(request, response);
+				// filterChain.doFilter(request, response);
 				throw new IOException("Access token is missing or invalid");
 			}
 		}
 	}
 
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+		String path = request.getRequestURI();
+		for (String p : excludeUrlPatterns) {
+			if (path.contains(p)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
-
