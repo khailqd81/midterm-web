@@ -32,12 +32,12 @@ import com.web.midterm.entity.Slide;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserAnswer;
 import com.web.midterm.entity.UserGroup;
-import com.web.midterm.service.ChatService;
-import com.web.midterm.service.GroupService;
-import com.web.midterm.service.PresentationService;
-import com.web.midterm.service.SlideService;
-import com.web.midterm.service.UserAnswerService;
-import com.web.midterm.service.UserService;
+import com.web.midterm.service.chat.ChatService;
+import com.web.midterm.service.group.GroupService;
+import com.web.midterm.service.presentation.PresentationService;
+import com.web.midterm.service.slide.SlideService;
+import com.web.midterm.service.user.UserService;
+import com.web.midterm.service.userAnswer.UserAnswerService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

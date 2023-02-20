@@ -1,26 +1,17 @@
 package com.web.midterm.controller;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 import javax.validation.Valid;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,13 +25,13 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.web.midterm.entity.SocialUserDto;
-import com.web.midterm.entity.UpdateUser;
 import com.web.midterm.entity.User;
-import com.web.midterm.entity.UserDto;
-import com.web.midterm.entity.Verifytoken;
-import com.web.midterm.service.UserService;
-import com.web.midterm.service.VerifytokenService;
+import com.web.midterm.entity.dto.SocialUserDto;
+import com.web.midterm.entity.dto.UpdateUserDto;
+import com.web.midterm.entity.dto.UserDto;
+import com.web.midterm.entity.dto.UserResponseDto;
+import com.web.midterm.service.user.UserService;
+import com.web.midterm.service.verifyToken.VerifytokenService;
 import com.web.midterm.utils.JWTHandler;
 
 @RestController
@@ -53,119 +44,44 @@ public class UserController {
 	@Autowired
 	private JWTHandler jwtHandler;
 
+	// Get user profile
 	@GetMapping
-	public ResponseEntity<?> getUser() {
-		// Get user from access token
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User user = userService.findByEmail(currentPrincipalName);
-//		Map<String, Object> response = new HashMap<>();
-//		response.put("userId", user.getUserId());
-//		response.put("email", user.getEmail());
-//		response.put("firstName", user.getFirstName());
-//		response.put("lastName", user.getLastName());
+	public ResponseEntity<User> getUser() {
+		User user = userService.getCurrentAuthUser();
 		return ResponseEntity.ok().body(user);
 	}
 
+	// Update user profile
 	@PostMapping
-	public ResponseEntity<?> updateUser(@RequestBody @Valid UpdateUser updateUser) throws Exception {
-		// Get user from access token
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User user = userService.findByEmail(currentPrincipalName);
-		// validation
-//		String firstName = data.get("firstName");
-//		String lastName = data.get("lastName");
-//		if (firstName == null || lastName == null) {
-//			throw new Exception("Update user validation failed");
-//		}
-		user.setFirstName(updateUser.getFirstName());
-		user.setLastName(updateUser.getLastName());
-		user.setPhone(updateUser.getPhone());
-		user.setAddress(updateUser.getAddress());
-		// Text day
-//		String birthday = updateUser.getBirthday();
-//		DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-//		sdf.setLenient(false);
-//		try {
-//			sdf.parse(birthday);
-//		} catch (ParseException e) {
-//			throw new Exception("Wrong date format");
-//		}
-//		user.setBirthday(sdf.parse(birthday));
-		user.setGender(updateUser.getGender());
-		System.out.println(user.getFirstName());
-		userService.save(user);
-		Map<String, Object> response = new HashMap<>();
-		response.put("message", "update user success");
-		response.put("email", user.getEmail());
-		response.put("firstName", user.getFirstName());
-		response.put("lastName", user.getLastName());
+	public ResponseEntity<?> updateUser(@RequestBody @Valid UpdateUserDto updateUser) throws Exception {
+		User user = userService.getCurrentAuthUser();
+		updateUser.setUserId(user.getUserId());
+		userService.update(updateUser);
+		UserResponseDto response = new UserResponseDto(user.getEmail(), user.getFirstName(), user.getLastName(),
+				"update user success");
 		return ResponseEntity.ok().body(response);
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> registerUser(@RequestBody @Valid UserDto user, BindingResult bindingResult)
-			throws Exception {
+	public ResponseEntity<?> registerUser(@RequestBody @Valid UserDto user) throws Exception {
 		Map<String, String> jsonResponse = new HashMap<>();
-		// validation
-		if (bindingResult.hasErrors()) {
-			List<FieldError> errors = bindingResult.getFieldErrors();
-			List<String> errorMessage = new ArrayList<>();
-			for (FieldError error : errors) {
-				errorMessage.add(error.getDefaultMessage());
-				System.out.println(error.getObjectName() + " - " + error.getDefaultMessage());
-			}
-
-			jsonResponse.put("message", "Validation failed");
-			return ResponseEntity.badRequest().body(jsonResponse);
-			// throw new Exception("Validation failed: " + errorMessage);
-		}
 
 		// Check exists email
 		User theUser = userService.findByEmail(user.getEmail());
 		if (theUser != null) {
 			jsonResponse.put("message", "Email has existed");
 			return ResponseEntity.badRequest().body(jsonResponse);
-			// throw new Exception("Email has existed");
 		}
-
-		userService.save(user);
-
-		String token = UUID.randomUUID().toString();
-		Date dt = new Date();
-		Calendar c = Calendar.getInstance();
-		c.setTime(dt);
-		c.add(Calendar.MINUTE, 15);
-		dt = c.getTime();
-		verifytokenService
-				.saveVerifytoken(new Verifytoken(token, new Date(), dt, userService.findByEmail(user.getEmail())));
-
-		verifytokenService.sendMail(user.getEmail(), token);
-
+		userService.register(user);
 		URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user").toUriString());
 		jsonResponse.put("message", "Register Success");
-		jsonResponse.put("confirmToken", token);
 		return ResponseEntity.created(uri).body(jsonResponse);
 	}
 
 	@PostMapping("/oauth2")
-	public ResponseEntity<?> loginWithOauth(@RequestBody @Valid SocialUserDto user, BindingResult bindingResult)
+	public ResponseEntity<?> loginWithOauth(@RequestBody @Valid SocialUserDto user)
 			throws Exception {
 		Map<String, String> jsonResponse = new HashMap<>();
-		// validation
-		if (bindingResult.hasErrors()) {
-			List<FieldError> errors = bindingResult.getFieldErrors();
-			List<String> errorMessage = new ArrayList<>();
-			for (FieldError error : errors) {
-				errorMessage.add(error.getDefaultMessage());
-				System.out.println(error.getObjectName() + " - " + error.getDefaultMessage());
-			}
-
-			jsonResponse.put("message", "Validation failed");
-			return ResponseEntity.badRequest().body(jsonResponse);
-			// throw new Exception("Validation failed: " + errorMessage);
-		}
 
 		// Check exists email
 		User theUser = userService.findByEmail(user.getEmail());
@@ -233,23 +149,16 @@ public class UserController {
 
 	@GetMapping("/isauth")
 	public ResponseEntity<?> isUserAuthenicated() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentPrincipalName = authentication.getName();
-		User user = userService.findByEmail(currentPrincipalName);
-		Map<String, Object> response = new HashMap<>();
-		response.put("userId", user.getUserId());
-		response.put("email", user.getEmail());
-		response.put("firstName", user.getFirstName());
-		response.put("lastName", user.getLastName());
-		// Map<String, String> jsonResponse = new HashMap<>();
-		response.put("message: ", "User Authenicated");
+		User user = userService.getCurrentAuthUser();
+		UserResponseDto response = new UserResponseDto();
+		BeanUtils.copyProperties(user, response);
+		response.setMessage("User Authenicated");
 		return ResponseEntity.ok().body(response);
 	}
 
 	@GetMapping("/refreshToken")
 	public ResponseEntity<?> refreshToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization)
 			throws Exception {
-		System.out.println(authorization);
 		if (authorization == null) {
 			throw new Exception("Empty refresh token");
 		}

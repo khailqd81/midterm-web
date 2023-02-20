@@ -1,4 +1,4 @@
-package com.web.midterm.entity;
+package com.web.midterm.entity.dto;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -7,7 +7,8 @@ import javax.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class UpdateUser {
+public class UpdateUserDto {
+	private int userId;
 	@NotNull(message = "FirstName is required")
 	private String firstName;
 	@NotNull(message = "Lastname is required")

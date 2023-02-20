@@ -13,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.web.midterm.service.UserServiceImpl;
+import com.web.midterm.service.user.UserServiceImpl;
 
 @Component
 public class CustomAuthenticationProvider implements AuthenticationProvider {

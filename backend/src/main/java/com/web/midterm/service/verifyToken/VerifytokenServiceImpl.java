@@ -1,7 +1,9 @@
-package com.web.midterm.service;
+package com.web.midterm.service.verifyToken;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -9,6 +11,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import com.web.midterm.entity.User;
 import com.web.midterm.entity.Verifytoken;
 import com.web.midterm.repo.VerifytokenRepository;
 
@@ -48,8 +51,8 @@ public class VerifytokenServiceImpl implements VerifytokenService {
 	}
 
 	@Override
-	public void sendMail(String toAddress, String token) {
-		String confirmationUrl = env.getProperty("frontend.url") +"/user/confirm?token=" + token;
+	public void sendMail(String toAddress) {
+		String confirmationUrl = env.getProperty("frontend.url") +"/user/confirm?token=" + UUID.randomUUID().toString();
 		SimpleMailMessage email = new SimpleMailMessage();
 		email.setTo(toAddress);
 		email.setSubject("Registration Confirmation");
@@ -64,6 +67,17 @@ public class VerifytokenServiceImpl implements VerifytokenService {
 			return verifytoken.get();
 		}
 		return null;
+	}
+
+	@Override
+	public Verifytoken generate(User user) {
+		String token = UUID.randomUUID().toString();
+		Date dt = new Date();
+		Calendar c = Calendar.getInstance();
+		c.setTime(dt);
+		c.add(Calendar.MINUTE, 15);
+		dt = c.getTime();
+		return new Verifytoken(token, new Date(), dt, user);
 	}
 
 }

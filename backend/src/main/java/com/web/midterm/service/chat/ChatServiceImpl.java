@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.chat;
 
 import java.util.Date;
 
@@ -15,6 +15,9 @@ import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
 import com.web.midterm.repo.ChatRepository;
+import com.web.midterm.service.group.GroupService;
+import com.web.midterm.service.presentation.PresentationService;
+import com.web.midterm.service.user.UserService;
 
 @Service
 public class ChatServiceImpl implements ChatService {

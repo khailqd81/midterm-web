@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.web.midterm.entity.Chat;
 import com.web.midterm.entity.Presentation;
-import com.web.midterm.service.ChatService;
+import com.web.midterm.service.chat.ChatService;
 
 @RestController
 @RequestMapping("/api/chats")

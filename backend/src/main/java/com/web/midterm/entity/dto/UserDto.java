@@ -1,4 +1,4 @@
-package com.web.midterm.entity;
+package com.web.midterm.entity.dto;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
@@ -8,7 +8,7 @@ public class UserDto {
 
 	@NotNull(message = "Email is required")
 	@Email(message="Wrong email format")
-	private String email;
+	protected String email;
 
 	@NotNull(message = "Password is required")
 	@Size(min = 5, message = "password length greater than 5")
@@ -18,9 +18,9 @@ public class UserDto {
 	@Size(min = 5, message = "password length greater than 5")
 	private String confirmPassword;
 
-	private String firstName;
+	protected String firstName;
 
-	private String lastName;
+	protected String lastName;
 	
 	@NotNull(message = "Gender is required")
 	private String gender;

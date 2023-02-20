@@ -31,7 +31,7 @@ import com.web.midterm.MidtermApplication;
 
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
 	private List<String> excludeUrlPatterns = new ArrayList<String>(
-			Arrays.asList("swagger-ui", "swagger-resources", "v2/api-docs","webjars","configuration/security","configuration"));
+			Arrays.asList("swagger-ui", "swagger-resources", "v2/api-docs","webjars","configuration/security","configuration","/favicon.ico"));
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

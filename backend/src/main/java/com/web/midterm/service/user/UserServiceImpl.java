@@ -1,11 +1,13 @@
-package com.web.midterm.service;
+package com.web.midterm.service.user;
 
+import java.beans.FeatureDescriptor;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -13,6 +15,9 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -26,11 +31,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.web.midterm.entity.Group;
-import com.web.midterm.entity.SocialUserDto;
 import com.web.midterm.entity.User;
-import com.web.midterm.entity.UserDto;
 import com.web.midterm.entity.Verifytoken;
+import com.web.midterm.entity.dto.SocialUserDto;
+import com.web.midterm.entity.dto.UpdateUserDto;
+import com.web.midterm.entity.dto.UserDto;
 import com.web.midterm.repo.UserRepository;
+import com.web.midterm.service.verifyToken.VerifytokenService;
 
 @Service
 public class UserServiceImpl implements UserService, UserDetailsService {
@@ -64,7 +71,21 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		newUser.setRole("ROLE_USER");
 		userRepository.save(newUser);
 	}
-
+	@Override
+	public void update(UpdateUserDto updateUser) {
+		User user = userRepository.findByUserId(updateUser.getUserId());
+		BeanUtils.copyProperties(updateUser, user, getNullPropertyNames(updateUser));
+		userRepository.save(user);
+	}
+	
+	public static String[] getNullPropertyNames(Object source) {
+	    final BeanWrapper wrappedSource = new BeanWrapperImpl(source);
+	    return Stream.of(wrappedSource.getPropertyDescriptors())
+	            .map(FeatureDescriptor::getName)
+	            .filter(propertyName -> wrappedSource.getPropertyValue(propertyName) == null)
+	            .toArray(String[]::new);
+	}
+	
 	@Override
 	@Transactional
 	public void save(SocialUserDto user) {
@@ -111,7 +132,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			verifytokenService.saveVerifytoken(
 					new Verifytoken(token, new Date(), dt, userRepository.findByEmail(user.getEmail())));
 
-			verifytokenService.sendMail(user.getEmail(), token);
+			verifytokenService.sendMail(user.getEmail());
 			throw new UsernameNotFoundException("Account is not activated. Check your email for verify");
 		}
 
@@ -184,6 +205,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		} else {
 			throw new Exception("Invalid token.");
 		}
+	}
+	@Override
+	public void register(UserDto user) {
+		this.save(user);
+		User userInDb = userRepository.findByEmail(user.getEmail());
+		Verifytoken token = verifytokenService.generate(userInDb);
+		verifytokenService.saveVerifytoken(token);
+		verifytokenService.sendMail(user.getEmail());
 	}
 
 }

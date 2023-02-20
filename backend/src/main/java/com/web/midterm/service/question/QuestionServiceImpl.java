@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.question;
 
 import java.util.Date;
 import java.util.List;
@@ -13,6 +13,8 @@ import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
 import com.web.midterm.repo.PresentationRepository;
 import com.web.midterm.repo.QuestionRepository;
+import com.web.midterm.service.group.GroupService;
+import com.web.midterm.service.user.UserService;
 
 @Service
 public class QuestionServiceImpl implements QuestionService {

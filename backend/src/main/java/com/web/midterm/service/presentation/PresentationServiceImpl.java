@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.presentation;
 
 import java.util.List;
 
@@ -9,6 +9,8 @@ import com.web.midterm.entity.Group;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.repo.PresentationRepository;
+import com.web.midterm.service.group.GroupService;
+import com.web.midterm.service.user.UserService;
 
 @Service
 public class PresentationServiceImpl implements PresentationService {
@@ -47,6 +49,7 @@ public class PresentationServiceImpl implements PresentationService {
 		if (user.getUserId() != presentation.getUser().getUserId()) {
 			throw new Exception("Access Denied");
 		}
+
 		Group g = presentation.getGroup();
 		if (g != null) {
 			g.setPresent(null);
@@ -55,13 +58,5 @@ public class PresentationServiceImpl implements PresentationService {
 		presentation.setGroup(null);
 		presentation.setDeleted(true);
 		presentationRepository.save(presentation);
-	}
-
-	@Override
-	public List<Presentation> findByUserUserIdCo(int userId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
+	}	
 }

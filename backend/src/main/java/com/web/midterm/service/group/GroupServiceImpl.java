@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.group;
 
 import java.util.Date;
 import java.util.List;
@@ -14,15 +14,16 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import com.web.midterm.entity.Group;
-import com.web.midterm.entity.GroupDto;
 import com.web.midterm.entity.GroupRole;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
+import com.web.midterm.entity.dto.GroupDto;
 import com.web.midterm.repo.GroupRepository;
 import com.web.midterm.repo.GroupRoleRepository;
 import com.web.midterm.repo.PresentationRepository;
 import com.web.midterm.repo.UserGroupRepository;
+import com.web.midterm.service.user.UserService;
 
 @Service
 public class GroupServiceImpl implements GroupService {
@@ -56,7 +57,39 @@ public class GroupServiceImpl implements GroupService {
 		List<UserGroup> userGroups = userGroupRepository.findByPrimaryKeyGroupGroupId(groupId);
 		return userGroups;
 	}
+	
+	@Override
+	public Group findById(int id) {
+		return groupRepository.findByGroupId(id);
+	}
+	
 
+	@Override
+	public Group findByGroupLink(String groupLink) {
+		return groupRepository.findByGroupLink(groupLink);
+	}
+
+	@Override
+	public void saveUserGroup(UserGroup userGroup) {
+		userGroupRepository.save(userGroup);
+	}
+	
+	@Override
+	public UserGroup findByUserIdAndGroupId(int userId, int groupId) {
+		return userGroupRepository.findByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
+	}
+
+	@Override
+	@Transactional
+	public void deleteMember(int userId, int groupId) {
+		userGroupRepository.deleteByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
+	}
+
+	@Override
+	public void save(Group g) {
+		groupRepository.save(g);
+	}
+	
 	@Override
 	public boolean saveMember(int userId, int groupId, String roleName) {
 		User user = userService.findByUserId(userId);
@@ -72,8 +105,8 @@ public class GroupServiceImpl implements GroupService {
 		if (roleName.equals("owner")) {
 			group.setUser(user);
 			groupRepository.save(group);
-			UserGroup userGroup = userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(),
-					groupId);
+			UserGroup userGroup = 
+					userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(), groupId);
 			GroupRole memberRole = groupRoleRepository.findByRoleName("co-owner");
 			userGroup.setGroupRole(memberRole);
 			userGroupRepository.save(userGroup);
@@ -84,11 +117,6 @@ public class GroupServiceImpl implements GroupService {
 		updateUserGroup.setGroupRole(role);
 		userGroupRepository.save(updateUserGroup);
 		return true;
-	}
-
-	@Override
-	public Group findById(int id) {
-		return groupRepository.findByGroupId(id);
 	}
 
 	@Override
@@ -110,16 +138,6 @@ public class GroupServiceImpl implements GroupService {
 
 		newGroup.getUserGroup().add(userGroup);
 		groupRepository.save(newGroup);
-	}
-
-	@Override
-	public Group findByGroupLink(String groupLink) {
-		return groupRepository.findByGroupLink(groupLink);
-	}
-
-	@Override
-	public void saveUserGroup(UserGroup userGroup) {
-		userGroupRepository.save(userGroup);
 	}
 
 	@Override
@@ -146,17 +164,6 @@ public class GroupServiceImpl implements GroupService {
 	}
 
 	@Override
-	public UserGroup findByUserIdAndGroupId(int userId, int groupId) {
-		return userGroupRepository.findByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
-	}
-
-	@Override
-	@Transactional
-	public void deleteMember(int userId, int groupId) {
-		userGroupRepository.deleteByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
-	}
-
-	@Override
 	public void delete(int groupId) throws Exception {
 		// Check exists group
 		Group g = groupRepository.findByGroupId(groupId);
@@ -179,9 +186,5 @@ public class GroupServiceImpl implements GroupService {
 		groupRepository.save(g);
 	}
 
-	@Override
-	public void save(Group g) {
-		groupRepository.save(g);
-	}
 
 }

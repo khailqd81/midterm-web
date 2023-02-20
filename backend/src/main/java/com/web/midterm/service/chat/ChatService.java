@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.chat;
 
 
 import org.springframework.data.domain.Page;

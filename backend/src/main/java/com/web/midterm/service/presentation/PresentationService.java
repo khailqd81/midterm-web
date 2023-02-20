@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.presentation;
 
 import java.util.List;
 
@@ -8,6 +8,5 @@ public interface PresentationService {
 	public Presentation findById(int id);
 	public void save(Presentation p);
 	public List<Presentation> findByUserUserId(int userId);
-	public List<Presentation> findByUserUserIdCo(int userId);
 	public void deleteById(int preId) throws Exception;
 }

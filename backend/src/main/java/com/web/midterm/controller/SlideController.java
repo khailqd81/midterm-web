@@ -31,11 +31,11 @@ import com.web.midterm.entity.Slide;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserAnswer;
 import com.web.midterm.repo.OptionRepository;
-import com.web.midterm.service.OptionService;
-import com.web.midterm.service.PresentationService;
-import com.web.midterm.service.SlideService;
-import com.web.midterm.service.UserAnswerService;
-import com.web.midterm.service.UserService;
+import com.web.midterm.service.option.OptionService;
+import com.web.midterm.service.presentation.PresentationService;
+import com.web.midterm.service.slide.SlideService;
+import com.web.midterm.service.user.UserService;
+import com.web.midterm.service.userAnswer.UserAnswerService;
 import com.web.midterm.socketio.SocketService;
 
 @RestController

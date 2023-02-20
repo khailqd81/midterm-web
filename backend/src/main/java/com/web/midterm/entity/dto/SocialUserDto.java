@@ -1,4 +1,4 @@
-package com.web.midterm.entity;
+package com.web.midterm.entity.dto;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;

@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.option;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,13 +15,11 @@ public class OptionServiceImpl implements OptionService {
 	@Override
 	public void deleteById(int optionId) throws Exception {
 		optionRepository.deleteById(optionId);
-
 	}
 	
 	@Override
 	public Option findById(int optionId){
 		return optionRepository.findById(optionId);
-
 	}
 
 }

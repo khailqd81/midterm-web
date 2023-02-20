@@ -26,6 +26,7 @@ import com.web.midterm.filter.CustomAuthorizationFilter;
 public class SecurityConfig {
 	@Value("${frontend.url}")
 	private String frontendUrl;
+	
 	@Autowired
 	private CustomAuthenticationProvider authProvider;
 

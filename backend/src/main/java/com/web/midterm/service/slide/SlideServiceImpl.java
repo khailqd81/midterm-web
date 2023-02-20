@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.slide;
 
 import java.util.Optional;
 

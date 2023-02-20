@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.web.midterm.entity.Group;
-import com.web.midterm.entity.GroupDto;
 import com.web.midterm.entity.GroupRole;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
+import com.web.midterm.entity.dto.GroupDto;
 import com.web.midterm.repo.GroupRoleRepository;
-import com.web.midterm.service.GroupService;
-import com.web.midterm.service.UserService;
+import com.web.midterm.service.group.GroupService;
+import com.web.midterm.service.user.UserService;
 
 import lombok.Data;
 

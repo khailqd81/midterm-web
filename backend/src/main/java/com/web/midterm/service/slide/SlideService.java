@@ -1,4 +1,4 @@
-package com.web.midterm.service;
+package com.web.midterm.service.slide;
 
 import com.web.midterm.entity.Slide;
 

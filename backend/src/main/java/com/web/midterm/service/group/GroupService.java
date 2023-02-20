@@ -1,10 +1,10 @@
-package com.web.midterm.service;
+package com.web.midterm.service.group;
 
 import java.util.List;
 
 import com.web.midterm.entity.Group;
-import com.web.midterm.entity.GroupDto;
 import com.web.midterm.entity.UserGroup;
+import com.web.midterm.entity.dto.GroupDto;
 
 public interface GroupService {
 	public List<UserGroup> findGroupByUserId(int userId);
