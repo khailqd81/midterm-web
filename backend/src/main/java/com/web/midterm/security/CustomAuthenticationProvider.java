@@ -40,7 +40,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 		if (!passwordEncoder.matches(password, user.getPassword())) {
 			throw new BadCredentialsException("Invalid email or password.");
 		}
-
 		Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
 
 		return new UsernamePasswordAuthenticationToken(user, password, authorities);

@@ -1,12 +1,10 @@
-package com.web.midterm.entity.dto;
+package com.web.midterm.entity.dto.userDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @AllArgsConstructor
-
 @Getter
 @Setter
 public class UserResponseDto {
@@ -21,7 +19,7 @@ public class UserResponseDto {
 		this.message = message;
 	}
 
-	protected String userId;
+	protected int userId;
 
 	protected String email;
 

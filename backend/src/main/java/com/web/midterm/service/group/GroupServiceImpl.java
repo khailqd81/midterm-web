@@ -1,5 +1,6 @@
 package com.web.midterm.service.group;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +19,10 @@ import com.web.midterm.entity.GroupRole;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
-import com.web.midterm.entity.dto.GroupDto;
+import com.web.midterm.entity.dto.groupDto.GroupDto;
+import com.web.midterm.entity.dto.groupDto.GroupInfoResponseDto;
+import com.web.midterm.entity.dto.groupDto.ListGroupResponseDto;
+import com.web.midterm.entity.dto.groupDto.UserGroupResponseDto;
 import com.web.midterm.repo.GroupRepository;
 import com.web.midterm.repo.GroupRoleRepository;
 import com.web.midterm.repo.PresentationRepository;
@@ -29,8 +33,9 @@ import com.web.midterm.service.user.UserService;
 public class GroupServiceImpl implements GroupService {
 	@Autowired
 	private UserService userService;
-	
-	// Include presentationRepository to prevent circular dependency with groupService
+
+	// Include presentationRepository to prevent circular dependency with
+	// groupService
 	@Autowired
 	private PresentationRepository presentationRepository;
 	@Autowired
@@ -39,7 +44,7 @@ public class GroupServiceImpl implements GroupService {
 	private GroupRepository groupRepository;
 	@Autowired
 	private GroupRoleRepository groupRoleRepository;
-	
+
 	@Autowired
 	private JavaMailSender mailSender;
 
@@ -57,12 +62,11 @@ public class GroupServiceImpl implements GroupService {
 		List<UserGroup> userGroups = userGroupRepository.findByPrimaryKeyGroupGroupId(groupId);
 		return userGroups;
 	}
-	
+
 	@Override
 	public Group findById(int id) {
 		return groupRepository.findByGroupId(id);
 	}
-	
 
 	@Override
 	public Group findByGroupLink(String groupLink) {
@@ -73,7 +77,7 @@ public class GroupServiceImpl implements GroupService {
 	public void saveUserGroup(UserGroup userGroup) {
 		userGroupRepository.save(userGroup);
 	}
-	
+
 	@Override
 	public UserGroup findByUserIdAndGroupId(int userId, int groupId) {
 		return userGroupRepository.findByPrimaryKeyUserUserIdAndPrimaryKeyGroupGroupId(userId, groupId);
@@ -89,7 +93,7 @@ public class GroupServiceImpl implements GroupService {
 	public void save(Group g) {
 		groupRepository.save(g);
 	}
-	
+
 	@Override
 	public boolean saveMember(int userId, int groupId, String roleName) {
 		User user = userService.findByUserId(userId);
@@ -105,8 +109,8 @@ public class GroupServiceImpl implements GroupService {
 		if (roleName.equals("owner")) {
 			group.setUser(user);
 			groupRepository.save(group);
-			UserGroup userGroup = 
-					userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(), groupId);
+			UserGroup userGroup = userGroupRepository.findByGroupRoleRoleIdAndPrimaryKeyGroupGroupId(role.getRoleId(),
+					groupId);
 			GroupRole memberRole = groupRoleRepository.findByRoleName("co-owner");
 			userGroup.setGroupRole(memberRole);
 			userGroupRepository.save(userGroup);
@@ -153,13 +157,9 @@ public class GroupServiceImpl implements GroupService {
 		message.setSubject("Group Invitation Link");
 		message.setContent("<div style=\"text-align: left; font-size: 16px\"><div>"
 				+ "<span style=\"font-weight: bold\">" + user.getEmail() + "</span>" + " has invited you to join the "
-				+ "<span style=\"font-weight: bold \">"+ group.getGroupName() + "</span>" + " group " + "</div>"
-				+ "<div style=\"margin-top: 14px\">"
-				+ "<div>This invitation will expire in 15 minutes:</div>"
-				+ "<div>"
-				+ inviteLink
-				+ "</div></div></div>",
-				"text/html; charset=utf-8");
+				+ "<span style=\"font-weight: bold \">" + group.getGroupName() + "</span>" + " group " + "</div>"
+				+ "<div style=\"margin-top: 14px\">" + "<div>This invitation will expire in 15 minutes:</div>" + "<div>"
+				+ inviteLink + "</div></div></div>", "text/html; charset=utf-8");
 		mailSender.send(message);
 	}
 
@@ -186,5 +186,62 @@ public class GroupServiceImpl implements GroupService {
 		groupRepository.save(g);
 	}
 
+	@Override
+	public ListGroupResponseDto getListGroupByUserId(int userId) {
+		List<UserGroup> userGroups = this.findGroupByUserId(userId);
+
+		// Divide result into 3 category
+		List<Group> ownerGroup = new ArrayList<>();
+		List<Group> memberGroup = new ArrayList<>();
+		List<Group> coOwnerGroup = new ArrayList<>();
+		for (UserGroup g : userGroups) {
+			Group groupDb = g.getGroup();
+			if (groupDb.isDeleted()) {
+				continue;
+			}
+			if (g.getGroupRole().getRoleName().equals("owner")) {
+				ownerGroup.add(g.getGroup());
+			} else if (g.getGroupRole().getRoleName().equals("co-owner")) {
+				coOwnerGroup.add(g.getGroup());
+			} else {
+				memberGroup.add(g.getGroup());
+			}
+		}
+
+		ListGroupResponseDto response = new ListGroupResponseDto(ownerGroup, coOwnerGroup, memberGroup);
+		return response;
+	}
+
+	@Override
+	public GroupInfoResponseDto getGroupMembers(int userId, int groupId) throws Exception {
+		Group group = this.findById(groupId);
+		if (group == null) {
+			throw new Exception("Group Id not found");
+		}
+		// Get role in group of auth user
+		UserGroup userGroup = this.findByUserIdAndGroupId(userId, groupId);
+		GroupRole role = userGroup.getGroupRole();
+		String roleName = role.getRoleName();
+		//
+		List<UserGroup> userGroups = this.getMembers(groupId);
+		List<UserGroupResponseDto> users = new ArrayList<>();
+		for (UserGroup g : userGroups) {
+			UserGroupResponseDto user = new UserGroupResponseDto();
+			user.setUser(g.getUser());
+			user.setRole(g.getGroupRole().getRoleName());
+			users.add(user);
+		}
+		
+		GroupInfoResponseDto info = new GroupInfoResponseDto();
+		info.setRole(roleName);
+		info.setPresent(group.getPresent());
+		info.setGroupId(group.getGroupId());
+		info.setGroupLink(group.getGroupLink());
+		info.setGroupName(group.getGroupName());
+		info.setCreatedAt(group.getCreatedAt());
+		info.setOwnerId(group.getUser().getUserId());
+		info.setMembers(users);
+		return info;
+	}
 
 }

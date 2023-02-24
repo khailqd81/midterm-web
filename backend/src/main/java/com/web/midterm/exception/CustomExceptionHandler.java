@@ -1,6 +1,8 @@
 package com.web.midterm.exception;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -18,13 +20,18 @@ public class CustomExceptionHandler {
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<?> handleValidationExceptions(
 	  MethodArgumentNotValidException ex) {
+		Map<String, Object> response = new HashMap<>();
+		ArrayList<String> listErrors = new ArrayList<>();
 	    Map<String, String> errors = new HashMap<>();
 	    ex.getBindingResult().getAllErrors().forEach((error) -> {
-	        String fieldName = ((FieldError) error).getField();
-	        String errorMessage = error.getDefaultMessage();
-	        errors.put(fieldName, errorMessage);
+//	        String fieldName = ((FieldError) error).getField();
+//	        String errorMessage = error.getDefaultMessage();
+//	        errors.put("message", errorMessage);
+	    	listErrors.add(error.getDefaultMessage());
 	    });
-	    return ResponseEntity.badRequest().body(errors);
+	    response.put("message", listErrors);
+	    response.put("code", HttpStatus.BAD_REQUEST.value());
+	    return ResponseEntity.badRequest().body(response);
 	}
 	
 	@ExceptionHandler

@@ -1,9 +1,7 @@
 package com.web.midterm.controller;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.validation.Valid;
@@ -11,31 +9,34 @@ import javax.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.JWTVerifier;
 import com.web.midterm.entity.User;
-import com.web.midterm.entity.dto.SocialUserDto;
-import com.web.midterm.entity.dto.UpdateUserDto;
-import com.web.midterm.entity.dto.UserDto;
-import com.web.midterm.entity.dto.UserResponseDto;
+import com.web.midterm.entity.dto.userDto.SocialUserDto;
+import com.web.midterm.entity.dto.userDto.UpdateUserDto;
+import com.web.midterm.entity.dto.userDto.UserLoginRequestDto;
+import com.web.midterm.entity.dto.userDto.UserLoginResponseDto;
+import com.web.midterm.entity.dto.userDto.UserRegisterRequestDto;
+import com.web.midterm.entity.dto.userDto.UserResponseDto;
 import com.web.midterm.service.user.UserService;
 import com.web.midterm.service.verifyToken.VerifytokenService;
 import com.web.midterm.utils.JWTHandler;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 public class UserController {
 	@Autowired
 	private UserService userService;
@@ -43,27 +44,44 @@ public class UserController {
 	private VerifytokenService verifytokenService;
 	@Autowired
 	private JWTHandler jwtHandler;
+	@Autowired
+	private AuthenticationManager authenticationManager;
 
-	// Get user profile
+	@PostMapping("/login")
+	public ResponseEntity<?> login(@RequestBody @Valid UserLoginRequestDto dto) throws Exception {
+		try {
+			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword()));
+		} catch (BadCredentialsException e) {
+			throw new Exception("INVALID_CREDENTIALS", e);
+		}
+		User user = userService.findByEmail(dto.getEmail());
+		String accessToken = jwtHandler.generateAccessToken(user);
+		String refreshToken = jwtHandler.generateRefreshToken(user);
+		return ResponseEntity.ok().body(new UserLoginResponseDto(accessToken, refreshToken, "Login success"));
+	}
+
 	@GetMapping
-	public ResponseEntity<User> getUser() {
+	@ResponseStatus(HttpStatus.OK)
+	public ResponseEntity<User> getUserInfoByUserId() {
 		User user = userService.getCurrentAuthUser();
 		return ResponseEntity.ok().body(user);
 	}
 
-	// Update user profile
 	@PostMapping
-	public ResponseEntity<?> updateUser(@RequestBody @Valid UpdateUserDto updateUser) throws Exception {
+	@ResponseStatus(HttpStatus.OK)
+	public ResponseEntity<?> updateUserProfile(@RequestBody @Valid UpdateUserDto updateUser) throws Exception {
 		User user = userService.getCurrentAuthUser();
 		updateUser.setUserId(user.getUserId());
 		userService.update(updateUser);
 		UserResponseDto response = new UserResponseDto(user.getEmail(), user.getFirstName(), user.getLastName(),
 				"update user success");
+		response.setUserId(user.getUserId());
 		return ResponseEntity.ok().body(response);
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> registerUser(@RequestBody @Valid UserDto user) throws Exception {
+	@ResponseStatus(HttpStatus.CREATED)
+	public ResponseEntity<?> registerUser(@RequestBody @Valid UserRegisterRequestDto user) throws Exception {
 		Map<String, String> jsonResponse = new HashMap<>();
 
 		// Check exists email
@@ -79,58 +97,46 @@ public class UserController {
 	}
 
 	@PostMapping("/oauth2")
-	public ResponseEntity<?> loginWithOauth(@RequestBody @Valid SocialUserDto user)
-			throws Exception {
-		Map<String, String> jsonResponse = new HashMap<>();
-
+	@ResponseStatus(HttpStatus.OK)
+	public ResponseEntity<?> loginWithOauth(@RequestBody @Valid SocialUserDto user) throws Exception {
 		// Check exists email
 		User theUser = userService.findByEmail(user.getEmail());
 		boolean isAuthBeforeWithGoogle = false;
 		if (theUser != null) {
+			// Check register with local before
 			if (theUser.getProvider().equals("GOOGLE")) {
 				isAuthBeforeWithGoogle = true;
 			} else {
-				jsonResponse.put("message", "Email has registerd with local authenicaiton");
-				return ResponseEntity.badRequest().body(jsonResponse);
+				throw new Exception("Email has registerd with local authenicaiton");
 			}
-
 		}
 
 		if (!isAuthBeforeWithGoogle) {
 			userService.save(user);
 		}
 
-		String email = user.getEmail();
-		List<String> roles = Arrays.asList("ROLE_USER");
-		String uri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/oauth2").toString();
-		String accessToken = jwtHandler.generateAccessToken(email, uri, roles);
-		String refreshToken = jwtHandler.generateAccessToken(email, uri, null);
-
-		jsonResponse.put("message", "Authenication with Oauth2 Success");
-		jsonResponse.put("access_token", accessToken);
-		jsonResponse.put("refresh_token", refreshToken);
-		return ResponseEntity.ok().body(jsonResponse);
+		UserLoginResponseDto response = userService.loginWithOauth2(user);
+		return ResponseEntity.ok().body(response);
 	}
 
 	@GetMapping("/confirm")
+	@ResponseStatus(HttpStatus.OK)
 	public ResponseEntity<?> confirmedToken(@RequestParam String token) throws Exception {
 		verifytokenService.confirmedToken(token);
-		Map<String, String> jsonResponse = new HashMap<>();
-		jsonResponse.put("Message: ", "Confirmed OK");
-		return ResponseEntity.ok().body(jsonResponse);
+		return ResponseEntity.ok("Confirmed OK");
 	}
 
 	@PostMapping("/renewPassword")
+	@ResponseStatus(HttpStatus.OK)
 	public ResponseEntity<?> renewPassword(@RequestBody Map<String, String> payload) throws Exception {
 		String token = payload.get("token");
 		String newPassword = payload.get("newPassword");
 		userService.renewPassword(token, newPassword);
-		Map<String, Object> response = new HashMap<>();
-		response.put("message: ", "Renew password success");
-		return ResponseEntity.ok().body(response);
+		return ResponseEntity.ok("Renew password success");
 	}
 
 	@PostMapping("/forgotPassword")
+	@ResponseStatus(HttpStatus.OK)
 	public ResponseEntity<?> forgotPassword(@RequestBody(required = false) Map<String, String> payload)
 			throws Exception {
 		if (payload == null) {
@@ -148,6 +154,7 @@ public class UserController {
 	}
 
 	@GetMapping("/isauth")
+	@ResponseStatus(HttpStatus.OK)
 	public ResponseEntity<?> isUserAuthenicated() {
 		User user = userService.getCurrentAuthUser();
 		UserResponseDto response = new UserResponseDto();
@@ -157,6 +164,7 @@ public class UserController {
 	}
 
 	@GetMapping("/refreshToken")
+	@ResponseStatus(HttpStatus.OK)
 	public ResponseEntity<?> refreshToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization)
 			throws Exception {
 		if (authorization == null) {
@@ -164,22 +172,15 @@ public class UserController {
 		}
 
 		// Check exists email
-		Algorithm algorithm = Algorithm.HMAC256(jwtHandler.getJwtSecret().getBytes());
-		JWTVerifier verifier = JWT.require(algorithm).build();
-		DecodedJWT decodedJWT = verifier.verify(authorization);
-		String email = decodedJWT.getSubject();
+		String email = jwtHandler.verifyRefreshToken(authorization);
 		User theUser = userService.findByEmail(email);
 		if (theUser == null) {
 			throw new Exception("Email not found");
 		}
-
-		List<String> roles = Arrays.asList("ROLE_USER");
-		String uri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/refreshToken").toString();
-		String accessToken = jwtHandler.generateAccessToken(email, uri, roles);
-		Map<String, String> jsonResponse = new HashMap<>();
-		jsonResponse.put("message", "Refresh token Success");
-		jsonResponse.put("access_token", accessToken);
-		return ResponseEntity.ok().body(jsonResponse);
+		
+		String accessToken = jwtHandler.generateAccessToken(theUser);
+		UserLoginResponseDto response = new UserLoginResponseDto(accessToken, null, "Refresh token Success");
+		return ResponseEntity.ok().body(response);
 	}
 
 }

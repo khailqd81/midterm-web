@@ -1,4 +1,4 @@
-package com.web.midterm.entity.dto;
+package com.web.midterm.entity.dto.userDto;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;

@@ -1,10 +1,10 @@
-package com.web.midterm.entity.dto;
+package com.web.midterm.entity.dto.userDto;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-public class UserDto {
+public class UserRegisterRequestDto {
 
 	@NotNull(message = "Email is required")
 	@Email(message="Wrong email format")

@@ -1,12 +1,8 @@
-package com.web.midterm.filter;
+package com.web.midterm.security;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import java.util.stream.Collectors;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -18,25 +14,24 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.web.midterm.MidtermApplication;
+import com.web.midterm.utils.JWTHandler;
 
 public class CustomAuthenicationFilter extends UsernamePasswordAuthenticationFilter {
 	
 	public AuthenticationManager authenticationManager;
+	private JWTHandler jwtHandler;
 	
 	public CustomAuthenicationFilter() {
 		
 	}
-	
-	public CustomAuthenicationFilter(AuthenticationManager authenticationManager) {
-		this.authenticationManager = authenticationManager;
+
+	public CustomAuthenicationFilter(AuthenticationManager authManager, JWTHandler jwtHandler) {
+		this.authenticationManager = authManager;
+		this.jwtHandler = jwtHandler;
 	}
 
 	@Override
@@ -52,33 +47,12 @@ public class CustomAuthenicationFilter extends UsernamePasswordAuthenticationFil
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authentication) throws IOException, ServletException {
-		Properties p = new Properties();
-		String jwtSecret = null;
-		try {
-			InputStream input =  MidtermApplication.class.getResourceAsStream("/application.properties");
-		    p.load(input);
-		    jwtSecret = p.getProperty("jwt.secret");
-		} catch (IOException ex) {
-		    ex.printStackTrace();
-		}
-		
 		User user = (User) authentication.getPrincipal();
-		Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes());
-		String access_token = JWT.create()
-				.withSubject(user.getUsername())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 3600000*2))
-				//.withExpiresAt(new Date(System.currentTimeMillis() + 60000))
-				.withIssuer(request.getRequestURI().toString())
-				.withClaim("roles",
-						user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-				.sign(algorithm);
-		String refresh_token = JWT.create().withSubject(user.getUsername())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 10 * 86400000))
-				.withIssuer(request.getRequestURI().toString()).sign(algorithm);
-
+		String accessToken = jwtHandler.generateAccessToken(user);
+		String refreshToken = jwtHandler.generateRefreshToken(user);
 		Map<String, String> tokens = new HashMap<>();
-		tokens.put("access_token", access_token);
-		tokens.put("refresh_token", refresh_token);
+		tokens.put("access_token", accessToken);
+		tokens.put("refresh_token", refreshToken);
 		response.setContentType("application/json");
 		new ObjectMapper().writeValue(response.getOutputStream(), tokens);
 	}
@@ -87,12 +61,9 @@ public class CustomAuthenicationFilter extends UsernamePasswordAuthenticationFil
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException failed) throws IOException, ServletException {
 		response.setContentType("application/json");
-		//ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid username or password", System.currentTimeMillis());
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		Map<String, String> error = new HashMap<>();
-		//error.put("message", "Invalid email or password");
 		error.put("message", failed.getMessage());
-		System.out.println(failed);
 		new ObjectMapper().writeValue(response.getOutputStream(),error);
 	}
 	

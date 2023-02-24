@@ -33,11 +33,13 @@ import org.springframework.stereotype.Service;
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.Verifytoken;
-import com.web.midterm.entity.dto.SocialUserDto;
-import com.web.midterm.entity.dto.UpdateUserDto;
-import com.web.midterm.entity.dto.UserDto;
+import com.web.midterm.entity.dto.userDto.SocialUserDto;
+import com.web.midterm.entity.dto.userDto.UpdateUserDto;
+import com.web.midterm.entity.dto.userDto.UserLoginResponseDto;
+import com.web.midterm.entity.dto.userDto.UserRegisterRequestDto;
 import com.web.midterm.repo.UserRepository;
 import com.web.midterm.service.verifyToken.VerifytokenService;
+import com.web.midterm.utils.JWTHandler;
 
 @Service
 public class UserServiceImpl implements UserService, UserDetailsService {
@@ -51,6 +53,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	private VerifytokenService verifytokenService;
 
 	@Autowired
+	private JWTHandler jwtHandler;
+
+	@Autowired
 	private JavaMailSender mailSender;
 
 	@Autowired
@@ -58,7 +63,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
 	@Override
 	@Transactional
-	public void save(UserDto user) {
+	public void save(UserRegisterRequestDto user) {
 		User newUser = new User();
 		newUser.setEmail(user.getEmail());
 		if (user.getPassword() != null) {
@@ -71,21 +76,20 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		newUser.setRole("ROLE_USER");
 		userRepository.save(newUser);
 	}
+
 	@Override
 	public void update(UpdateUserDto updateUser) {
 		User user = userRepository.findByUserId(updateUser.getUserId());
 		BeanUtils.copyProperties(updateUser, user, getNullPropertyNames(updateUser));
 		userRepository.save(user);
 	}
-	
+
 	public static String[] getNullPropertyNames(Object source) {
-	    final BeanWrapper wrappedSource = new BeanWrapperImpl(source);
-	    return Stream.of(wrappedSource.getPropertyDescriptors())
-	            .map(FeatureDescriptor::getName)
-	            .filter(propertyName -> wrappedSource.getPropertyValue(propertyName) == null)
-	            .toArray(String[]::new);
+		final BeanWrapper wrappedSource = new BeanWrapperImpl(source);
+		return Stream.of(wrappedSource.getPropertyDescriptors()).map(FeatureDescriptor::getName)
+				.filter(propertyName -> wrappedSource.getPropertyValue(propertyName) == null).toArray(String[]::new);
 	}
-	
+
 	@Override
 	@Transactional
 	public void save(SocialUserDto user) {
@@ -172,7 +176,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		MimeMessage message = mailSender.createMimeMessage();
 		message.setRecipient(MimeMessage.RecipientType.TO, new InternetAddress(toAddress, false));
 		String token = UUID.randomUUID().toString();
-		//String encodeToken = passwordEncoder.encode(token);
+		// String encodeToken = passwordEncoder.encode(token);
 		// Store renew token
 		Date dt = new Date();
 		Calendar c = Calendar.getInstance();
@@ -182,13 +186,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		verifytokenService.saveVerifytoken(new Verifytoken(token, new Date(), dt, user));
 		message.setSubject("Renew Password Link");
 		String renewLink = env.getProperty("frontend.url") + "/renewPassword/" + token;
-		//message.setContent("<h1>Link to renew your password: </h1>" + renewLink, "text/html; charset=utf-8");
+		// message.setContent("<h1>Link to renew your password: </h1>" + renewLink,
+		// "text/html; charset=utf-8");
 		message.setContent("<div style=\"text-align: left; font-size: 16px\" >"
 				+ "<div style=\"font-weight: bold;font-size: 20px\">Link to renew password (expire in 15 minutes):</div>"
-				+ "<div>"
-				+ renewLink                  
-				+ "</div>"
-				+ "</div>","text/html; charset=utf-8");
+				+ "<div>" + renewLink + "</div>" + "</div>", "text/html; charset=utf-8");
 		mailSender.send(message);
 	}
 
@@ -206,13 +208,25 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			throw new Exception("Invalid token.");
 		}
 	}
+
 	@Override
-	public void register(UserDto user) {
+	public void register(UserRegisterRequestDto user) {
 		this.save(user);
 		User userInDb = userRepository.findByEmail(user.getEmail());
 		Verifytoken token = verifytokenService.generate(userInDb);
 		verifytokenService.saveVerifytoken(token);
 		verifytokenService.sendMail(user.getEmail());
+	}
+
+	@Override
+	public UserLoginResponseDto loginWithOauth2(SocialUserDto userDto) {
+		User user = new User();
+		BeanUtils.copyProperties(userDto, user);
+		String accessToken = jwtHandler.generateAccessToken(user);
+		String refreshToken = jwtHandler.generateRefreshToken(user);
+		String message = "Authenication with Oauth2 Success";
+		return new UserLoginResponseDto(accessToken, refreshToken, message);
+
 	}
 
 }
