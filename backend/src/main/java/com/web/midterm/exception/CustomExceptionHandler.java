@@ -2,12 +2,10 @@ package com.web.midterm.exception;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +30,20 @@ public class CustomExceptionHandler {
 	    response.put("message", listErrors);
 	    response.put("code", HttpStatus.BAD_REQUEST.value());
 	    return ResponseEntity.badRequest().body(response);
+	}
+	
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex){
+		System.out.println("ex: " + ex.getMessage());
+		return new ResponseEntity<>(
+				new ErrorResponse(HttpStatus.BAD_REQUEST.value(),ex.getMessage(),System.currentTimeMillis()),HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(InternalException.class)
+	public ResponseEntity<ErrorResponse> handleIntenalException(BadRequestException ex){
+		System.out.println("ex: " + ex.getMessage());
+		return new ResponseEntity<>(
+				new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),ex.getMessage(),System.currentTimeMillis()),HttpStatus.BAD_REQUEST);
 	}
 	
 	@ExceptionHandler

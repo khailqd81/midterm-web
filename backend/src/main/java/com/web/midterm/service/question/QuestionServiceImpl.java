@@ -1,10 +1,14 @@
 package com.web.midterm.service.question;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.Presentation;
@@ -26,6 +30,10 @@ public class QuestionServiceImpl implements QuestionService {
 	private QuestionRepository questionRepository;
 	@Autowired
 	private PresentationRepository presentationRepository;
+	
+	@Value("${socket.url.question}")
+	private String socketUrlQuestion;
+	
 	@Override
 	public void save(Question q) {
 		questionRepository.save(q);
@@ -64,6 +72,14 @@ public class QuestionServiceImpl implements QuestionService {
 		newQuestion.setPresent(p);
 		newQuestion.setContent(questionContent);
 		questionRepository.save(newQuestion);
+		// call socket server
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		map.put("group", p.getGroup());
+//		// send POST request
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.postForEntity(socketUrlQuestion, map, Void.class);
 		return newQuestion;
 	}
 
@@ -88,6 +104,13 @@ public class QuestionServiceImpl implements QuestionService {
 		newQuestion.setPresent(p);
 		newQuestion.setContent(questionContent);;
 		questionRepository.save(newQuestion);
+		// call socket server
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		// send POST request
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.postForEntity(socketUrlQuestion, map, Void.class);
 		return newQuestion;
 	}
 
@@ -99,27 +122,56 @@ public class QuestionServiceImpl implements QuestionService {
 		}
 		q.setVote(q.getVote() + 1);
 		questionRepository.save(q);
+		Presentation p = q.getPresent();
+		// call socket server
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		// send POST request
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.postForEntity(socketUrlQuestion, map, Void.class);
+		//
 		return q;
 	}
 
 	@Override
 	public Question updateAnsweredQuestion(int questionId) throws Exception {
-		User user = userService.getCurrentAuthUser();
-		// Check owner or co-owner
-		//
 		Question q = questionRepository.findById(questionId);
 		if (q == null) {
 			throw new Exception("Question id not found");
 		}
 		q.setAnswered(true);
 		questionRepository.save(q);
+		Presentation p = q.getPresent();
+		// call socket server
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		// send POST request
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.postForEntity(socketUrlQuestion, map, Void.class);
+
 		return q;
 	}
 
 	@Override
 	public Question upvoteQuestionPublic(int questionId) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		Question q = questionRepository.findById(questionId);
+		if (q == null) {
+			throw new Exception("Question id not found");
+		}
+		q.setVote(q.getVote() + 1);
+		questionRepository.save(q);
+
+		Presentation p = q.getPresent();
+		// call socket server
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.postForEntity(socketUrlQuestion, map, Void.class);
+		//
+		return q;
 	}
 
 }

@@ -1,4 +1,4 @@
-package com.web.midterm.entity.dto.groupDto;
+package com.web.midterm.dto.group_dto;
 
 import javax.validation.constraints.NotNull;
 

@@ -1,4 +1,4 @@
-package com.web.midterm.entity.dto.groupDto;
+package com.web.midterm.dto.group_dto;
 
 import java.util.Date;
 import java.util.List;

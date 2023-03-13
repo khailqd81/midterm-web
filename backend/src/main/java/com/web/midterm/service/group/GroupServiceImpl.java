@@ -14,15 +14,18 @@ import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import com.web.midterm.dto.group_dto.GroupDto;
+import com.web.midterm.dto.group_dto.GroupInfoResponseDto;
+import com.web.midterm.dto.group_dto.ListGroupResponseDto;
+import com.web.midterm.dto.group_dto.SendInviteEmailRequestDto;
+import com.web.midterm.dto.group_dto.UpdateMemberRequestDto;
+import com.web.midterm.dto.group_dto.UserGroupResponseDto;
 import com.web.midterm.entity.Group;
 import com.web.midterm.entity.GroupRole;
 import com.web.midterm.entity.Presentation;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.UserGroup;
-import com.web.midterm.entity.dto.groupDto.GroupDto;
-import com.web.midterm.entity.dto.groupDto.GroupInfoResponseDto;
-import com.web.midterm.entity.dto.groupDto.ListGroupResponseDto;
-import com.web.midterm.entity.dto.groupDto.UserGroupResponseDto;
+import com.web.midterm.exception.BadRequestException;
 import com.web.midterm.repo.GroupRepository;
 import com.web.midterm.repo.GroupRoleRepository;
 import com.web.midterm.repo.PresentationRepository;
@@ -95,16 +98,16 @@ public class GroupServiceImpl implements GroupService {
 	}
 
 	@Override
-	public boolean saveMember(int userId, int groupId, String roleName) {
+	public void saveMember(int userId, int groupId, String roleName) throws Exception {
 		User user = userService.findByUserId(userId);
 		Group group = groupRepository.findByGroupId(groupId);
 		GroupRole role = groupRoleRepository.findByRoleName(roleName);
 		if (user == null || group == null || role == null) {
-			return false;
+			throw new Exception("User or Group or Role not found");
 		}
-		if (user.getUserId() == group.getUser().getUserId()) {
-			return false;
-		}
+//		if (user.getUserId() == group.getUser().getUserId()) {
+//			return false;
+//		}
 		// Change owner of the group => change current owner to co-owner
 		if (roleName.equals("owner")) {
 			group.setUser(user);
@@ -120,7 +123,6 @@ public class GroupServiceImpl implements GroupService {
 		updateUserGroup.setUser(user);
 		updateUserGroup.setGroupRole(role);
 		userGroupRepository.save(updateUserGroup);
-		return true;
 	}
 
 	@Override
@@ -145,15 +147,15 @@ public class GroupServiceImpl implements GroupService {
 	}
 
 	@Override
-	public void sendInviteLink(String toAddress, int groupId) throws Exception {
+	public void sendInviteLink(SendInviteEmailRequestDto dto) throws Exception {
 		User user = userService.getCurrentAuthUser();
-		Group group = groupRepository.findByGroupId(groupId);
+		Group group = groupRepository.findByGroupId(dto.getGroupId());
 		if (group == null) {
 			throw new Exception("Group ID not found");
 		}
 		String inviteLink = env.getProperty("frontend.url") + "/home/groups/join/" + group.getGroupLink();
 		MimeMessage message = mailSender.createMimeMessage();
-		message.setRecipient(MimeMessage.RecipientType.TO, new InternetAddress(toAddress, false));
+		message.setRecipient(MimeMessage.RecipientType.TO, new InternetAddress(dto.getMemberEmail(), false));
 		message.setSubject("Group Invitation Link");
 		message.setContent("<div style=\"text-align: left; font-size: 16px\"><div>"
 				+ "<span style=\"font-weight: bold\">" + user.getEmail() + "</span>" + " has invited you to join the "
@@ -231,7 +233,7 @@ public class GroupServiceImpl implements GroupService {
 			user.setRole(g.getGroupRole().getRoleName());
 			users.add(user);
 		}
-		
+
 		GroupInfoResponseDto info = new GroupInfoResponseDto();
 		info.setRole(roleName);
 		info.setPresent(group.getPresent());
@@ -242,6 +244,37 @@ public class GroupServiceImpl implements GroupService {
 		info.setOwnerId(group.getUser().getUserId());
 		info.setMembers(users);
 		return info;
+	}
+
+	@Override
+	public void updateMember(UpdateMemberRequestDto dto) throws Exception {
+		int userId = dto.getUserId();
+		String role = dto.getRole();
+		int groupId = dto.getGroupId();
+		if (role.equals("kick")) {
+			// Handle kick out member
+			this.deleteMember(userId, groupId);
+		}
+		this.saveMember(userId, groupId, role);
+	}
+
+	@Override
+	public void joinGroupByLink(String groupLink) throws Exception {
+		User user = userService.getCurrentAuthUser();
+		Group group = groupRepository.findByGroupLink(groupLink);
+		GroupRole role = groupRoleRepository.findByRoleName("member");
+		UserGroup userGroup = this.findByUserIdAndGroupId(user.getUserId(), group.getGroupId());
+		if (userGroup != null) {
+			throw new BadRequestException("You have joined group");
+		}
+		if (user != null && group != null && role != null) {
+			UserGroup newUserGroup = new UserGroup();
+			newUserGroup.setUser(user);
+			newUserGroup.setGroup(group);
+			newUserGroup.setGroupRole(role);
+			userGroupRepository.save(newUserGroup);
+		}
+
 	}
 
 }

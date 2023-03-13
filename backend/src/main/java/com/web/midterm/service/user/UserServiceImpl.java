@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -30,17 +29,19 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.web.midterm.entity.Group;
+import com.web.midterm.dto.user_dto.SocialUserDto;
+import com.web.midterm.dto.user_dto.UpdateUserDto;
+import com.web.midterm.dto.user_dto.UserLoginResponseDto;
+import com.web.midterm.dto.user_dto.UserRegisterRequestDto;
 import com.web.midterm.entity.User;
 import com.web.midterm.entity.Verifytoken;
-import com.web.midterm.entity.dto.userDto.SocialUserDto;
-import com.web.midterm.entity.dto.userDto.UpdateUserDto;
-import com.web.midterm.entity.dto.userDto.UserLoginResponseDto;
-import com.web.midterm.entity.dto.userDto.UserRegisterRequestDto;
 import com.web.midterm.repo.UserRepository;
 import com.web.midterm.service.verifyToken.VerifytokenService;
 import com.web.midterm.utils.JWTHandler;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 @Service
 public class UserServiceImpl implements UserService, UserDetailsService {
 	@Autowired
@@ -60,6 +61,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
 	@Autowired
 	private Environment env;
+
+	public UserServiceImpl(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
 
 	@Override
 	@Transactional
@@ -91,7 +96,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	}
 
 	@Override
-	@Transactional
 	public void save(SocialUserDto user) {
 		User newUser = new User();
 		newUser.setEmail(user.getEmail());
@@ -105,16 +109,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	}
 
 	@Override
-	@Transactional
 	public User findByEmail(String email) {
 		User user = userRepository.findByEmail(email);
 		return user;
-	}
-
-	@Override
-	public List<Group> getGroups(int userId) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
@@ -150,7 +147,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
 	@Override
 	public User findByUserId(int id) {
-
 		return userRepository.findByUserId(id);
 	}
 

@@ -54,10 +54,6 @@ public class SlideController {
 	private UserService userService;
 	@Autowired
 	private UserAnswerService userAnswerService;
-	@Autowired
-	private SocketIOServer socketIOServer;
-	@Autowired
-	private SocketService socketService;
 	@Value("${socket.url}")
 	private String socketUrl;
 	
@@ -229,6 +225,7 @@ public class SlideController {
 		slideService.deleteById(slideId);
 		
 		presentation.setSlideList(slideList);
+		
 		// Call socket server
 		// request url
 		String url = socketUrl + "/slides";
