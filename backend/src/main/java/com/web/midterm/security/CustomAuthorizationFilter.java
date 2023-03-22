@@ -47,16 +47,19 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 				String token = authorizationHeader.substring("Bearer ".length());
 				DecodedJWT decodedJWT = jwtHandler.verifyAccessToken(token);
 				String username = decodedJWT.getSubject();
-				String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+				System.out.println("decodedJWT: "+ decodedJWT.getClaim("roles"));
+				String role = decodedJWT.getClaim("roles").toString();
 				Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-				Arrays.stream(roles).forEach(role -> {
-					authorities.add(new SimpleGrantedAuthority(role));
-				});
+				authorities.add(new SimpleGrantedAuthority(role));
+//				Arrays.stream(roles).forEach(role -> {
+//					authorities.add(new SimpleGrantedAuthority(role));
+//				});
 				UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
 						username, null, authorities);
 				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 				filterChain.doFilter(request, response);
 			} catch (Exception e) {
+				e.printStackTrace();
 				response.setHeader("error", e.getMessage());
 				response.setStatus(HttpStatus.FORBIDDEN.value());
 				Map<String, String> error = new HashMap<>();

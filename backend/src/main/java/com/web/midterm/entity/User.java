@@ -17,16 +17,23 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 @Entity
+@Builder
+@AllArgsConstructor
 @Table(name="user", schema="public")
 @Getter
 @Setter
 @ToString
 public class User {
+	public User() {
+	}
+
 	@Id
 	@Column(name="user_id")
 	@GeneratedValue(strategy=GenerationType.IDENTITY)

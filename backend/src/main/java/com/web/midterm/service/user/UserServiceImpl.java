@@ -98,6 +98,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	@Override
 	public void save(SocialUserDto user) {
 		User newUser = new User();
+		//User newUser = User.builder();
 		newUser.setEmail(user.getEmail());
 		newUser.setPassword(null);
 		newUser.setEnabled(true);

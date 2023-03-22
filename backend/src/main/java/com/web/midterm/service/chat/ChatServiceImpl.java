@@ -1,13 +1,18 @@
 package com.web.midterm.service.chat;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.web.midterm.entity.Chat;
 import com.web.midterm.entity.Group;
@@ -29,6 +34,8 @@ public class ChatServiceImpl implements ChatService {
 	private PresentationRepository presentationRepository;
 	@Autowired
 	private ChatRepository chatRepository;
+	@Value("${socket.url}")
+	private String socketUrl;
 
 	@Override
 	public void save(Chat c) {
@@ -59,9 +66,22 @@ public class ChatServiceImpl implements ChatService {
 		newMessage.setPresent(p);
 		newMessage.setMessage(messageContent);
 		chatRepository.save(newMessage);
+
+		// call socket server
+		// request url
+		String url = socketUrl + "/chats";
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		map.put("group", p.getGroup());
+		map.put("chat", newMessage);
+
+		// send POST request
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
 		return newMessage;
 	}
-	
+
 	@Override
 	public Chat addNewMessageAnonymus(int presentId, String messageContent) throws Exception {
 		User user = userService.findByEmail("anonymous@gmail.com");
@@ -83,9 +103,21 @@ public class ChatServiceImpl implements ChatService {
 		newMessage.setPresent(p);
 		newMessage.setMessage(messageContent);
 		chatRepository.save(newMessage);
+		// call socket server
+		// request url
+		String url = socketUrl + "/chats";
+		// request body parameters
+		Map<String, Object> map = new HashMap<>();
+		map.put("presentation", p);
+		map.put("chat", newMessage);
+
+		// send POST request
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
+		//
 		return newMessage;
 	}
-	
+
 	@Override
 	public Page<Chat> findByPresentationId(int preId, int page) throws Exception {
 		Presentation p = presentationRepository.findById(preId);

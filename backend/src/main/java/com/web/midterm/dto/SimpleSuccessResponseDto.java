@@ -1,5 +1,6 @@
 package com.web.midterm.dto;
 
+
 public class SimpleSuccessResponseDto {
 	private String message;
 	

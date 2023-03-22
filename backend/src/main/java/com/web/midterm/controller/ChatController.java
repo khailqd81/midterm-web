@@ -14,10 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.web.midterm.entity.Chat;
-import com.web.midterm.entity.Presentation;
 import com.web.midterm.service.chat.ChatService;
 
 @RestController
@@ -33,23 +31,7 @@ public class ChatController {
 	@PostMapping("/{presentId}")
 	public ResponseEntity<?> addNewMessage(@PathVariable int presentId, @RequestBody Map<String, String> payload)
 			throws Exception {
-
 		Chat addedChat = chatService.addNewMessage(presentId, payload.get("content"));
-		Presentation p = addedChat.getPresent();
-		
-		// call socket server
-		// request url
-		String url = socketUrl + "/chats";
-		// request body parameters
-		Map<String, Object> map = new HashMap<>();
-		map.put("presentation", p);
-		map.put("group", p.getGroup());
-		map.put("chat", addedChat);
-
-//		// send POST request
-		RestTemplate restTemplate = new RestTemplate();
-		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
-		//
 		Map<String, Object> result = new HashMap<>();
 		result.put("message", "Add new message success");
 		result.put("chat", addedChat);
@@ -60,19 +42,6 @@ public class ChatController {
 	public ResponseEntity<?> addNewMessageAnonymus(@PathVariable int presentId,
 			@RequestBody Map<String, String> payload) throws Exception {
 		Chat addedChat = chatService.addNewMessageAnonymus(presentId, payload.get("content"));
-		Presentation p = addedChat.getPresent();
-		// call socket server
-		// request url
-		String url = socketUrl + "/chats";
-		// request body parameters
-		Map<String, Object> map = new HashMap<>();
-		map.put("presentation", p);
-		map.put("chat", addedChat);
-
-		// send POST request
-		RestTemplate restTemplate = new RestTemplate();
-		ResponseEntity<Void> response = restTemplate.postForEntity(url, map, Void.class);
-		//
 		Map<String, Object> result = new HashMap<>();
 		result.put("message", "Add new message success");
 		result.put("chat", addedChat);

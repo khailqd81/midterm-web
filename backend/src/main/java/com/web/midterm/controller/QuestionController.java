@@ -27,8 +27,8 @@ public class QuestionController {
 	}
 
 	@PostMapping("/public/{presentId}")
-	public ResponseEntity<?> addNewQuestionPublic(@PathVariable int presentId,
-			@RequestBody Map<String, String> payload) throws Exception {
+	public ResponseEntity<?> addNewQuestionPublic(@PathVariable int presentId, @RequestBody Map<String, String> payload)
+			throws Exception {
 		questionService.addNewQuestionPublic(presentId, payload.get("content"));
 		return ResponseEntity.ok().body(new SimpleSuccessResponseDto("Add new question public success"));
 	}

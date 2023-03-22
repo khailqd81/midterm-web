@@ -22,4 +22,9 @@ public class OptionServiceImpl implements OptionService {
 		return optionRepository.findById(optionId);
 	}
 
+	@Override
+	public void save(Option option) {
+		optionRepository.save(option);
+	}
+
 }

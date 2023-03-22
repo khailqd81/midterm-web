@@ -66,6 +66,7 @@ public class JWTHandler implements Serializable{
 		try {
 			decodedJWT = verifier.verify(token);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new JWTVerificationException(e.getMessage());
 		}
 		if (decodedJWT != null && decodedJWT.getExpiresAt().before(new Date())) {
